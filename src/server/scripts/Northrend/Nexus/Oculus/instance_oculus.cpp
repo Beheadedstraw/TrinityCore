@@ -57,7 +57,7 @@ class instance_oculus : public InstanceMapScript
                     case NPC_VAROS:
                         VarosGUID = creature->GetGUID();
                         if (GetBossState(DATA_DRAKOS) == DONE)
-                            creature->SetPhaseMask(1, true);
+                           creature->SetPhaseMask(1, true);
                         break;
                     case NPC_UROM:
                         UromGUID = creature->GetGUID();
@@ -153,17 +153,17 @@ class instance_oculus : public InstanceMapScript
                 }
             }
 
-            void FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet) override
+            void FillInitialWorldStates(WorldPacket& data) override
             {
                 if (GetBossState(DATA_DRAKOS) == DONE && GetBossState(DATA_VAROS) != DONE)
                 {
-                    packet.Worldstates.emplace_back(uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW), 1);
-                    packet.Worldstates.emplace_back(uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT), int32(CentrifugueConstructCounter));
+                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW) << uint32(1);
+                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT) << uint32(CentrifugueConstructCounter);
                 }
                 else
                 {
-                    packet.Worldstates.emplace_back(uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW), 0);
-                    packet.Worldstates.emplace_back(uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT), 0);
+                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW) << uint32(0);
+                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT) << uint32(0);
                 }
             }
 

@@ -30,38 +30,24 @@
 
 enum RogueSpells
 {
-    SPELL_ROGUE_BLADE_FLURRY                        = 13877,
-    SPELL_ROGUE_BLADE_FLURRY_EXTRA_ATTACK           = 22482,
-    SPELL_ROGUE_CHEAT_DEATH_COOLDOWN                = 31231,
-    SPELL_ROGUE_CRIPPLING_POISON                    = 3409,
-    SPELL_ROGUE_GLYPH_OF_PREPARATION                = 56819,
-    SPELL_ROGUE_KILLING_SPREE                       = 51690,
-    SPELL_ROGUE_KILLING_SPREE_TELEPORT              = 57840,
-    SPELL_ROGUE_KILLING_SPREE_WEAPON_DMG            = 57841,
-    SPELL_ROGUE_KILLING_SPREE_DMG_BUFF              = 61851,
-    SPELL_ROGUE_MASTER_OF_SUBTLETY_DAMAGE_PERCENT   = 31665,
-    SPELL_ROGUE_MASTER_OF_SUBTLETY_PASSIVE          = 31223,
-    SPELL_ROGUE_MASTER_OF_SUBTLETY_PERIODIC         = 31666,
-    SPELL_ROGUE_SANCTUARY                           = 98877,
-    SPELL_ROGUE_STEALTH                             = 1784,
-    SPELL_ROGUE_STEALTH_STEALTH_AURA                = 158185,
-    SPELL_ROGUE_STEALTH_SHAPESHIFT_AURA             = 158188,
-    SPELL_ROGUE_VANISH_AURA                         = 11327,
-    SPELL_ROGUE_PREY_ON_THE_WEAK                    = 58670,
-    SPELL_ROGUE_SHIV_TRIGGERED                      = 5940,
-    SPELL_ROGUE_SILCE_AND_DICE                      = 5171,
-    SPELL_ROGUE_TRICKS_OF_THE_TRADE_DMG_BOOST       = 57933,
-    SPELL_ROGUE_TRICKS_OF_THE_TRADE_PROC            = 59628,
-    SPELL_ROGUE_SERRATED_BLADES_R1                  = 14171,
-    SPELL_ROGUE_RUPTURE                             = 1943,
-    SPELL_ROGUE_HONOR_AMONG_THIEVES                 = 51698,
-    SPELL_ROGUE_HONOR_AMONG_THIEVES_PROC            = 51699,
-    SPELL_ROGUE_T5_2P_SET_BONUS                     = 37169
-};
-
-enum RogueSpellIcons
-{
-    ICON_ROGUE_IMPROVED_RECUPERATE                  = 4819
+    SPELL_ROGUE_BLADE_FLURRY_EXTRA_ATTACK       = 22482,
+    SPELL_ROGUE_CHEAT_DEATH_COOLDOWN            = 31231,
+    SPELL_ROGUE_GLYPH_OF_PREPARATION            = 56819,
+    SPELL_ROGUE_KILLING_SPREE                   = 51690,
+    SPELL_ROGUE_KILLING_SPREE_TELEPORT          = 57840,
+    SPELL_ROGUE_KILLING_SPREE_WEAPON_DMG        = 57841,
+    SPELL_ROGUE_KILLING_SPREE_DMG_BUFF          = 61851,
+    SPELL_ROGUE_PREY_ON_THE_WEAK                = 58670,
+    SPELL_ROGUE_SHIV_TRIGGERED                  = 5940,
+    SPELL_ROGUE_TRICKS_OF_THE_TRADE_DMG_BOOST   = 57933,
+    SPELL_ROGUE_TRICKS_OF_THE_TRADE_PROC        = 59628,
+    SPELL_ROGUE_HONOR_AMONG_THIEVES             = 51698,
+    SPELL_ROGUE_HONOR_AMONG_THIEVES_PROC        = 52916,
+    SPELL_ROGUE_HONOR_AMONG_THIEVES_2           = 51699,
+    SPELL_ROGUE_T10_2P_BONUS                    = 70804,
+    SPELL_ROGUE_GLYPH_OF_BACKSTAB_TRIGGER       = 63975,
+    SPELL_ROGUE_QUICK_RECOVERY_ENERGY           = 31663,
+    SPELL_ROGUE_CRIPPLING_POISON                = 3409
 };
 
 // 13877, 33735, (check 51211, 65956) - Blade Flurry
@@ -90,27 +76,24 @@ class spell_rog_blade_flurry : public SpellScriptLoader
 
             bool CheckProc(ProcEventInfo& eventInfo)
             {
-                _procTarget = GetTarget()->SelectNearbyTarget(eventInfo.GetProcTarget());
-                return _procTarget && eventInfo.GetDamageInfo();
+                _procTarget = eventInfo.GetActor()->SelectNearbyTarget(eventInfo.GetProcTarget());
+                return _procTarget != nullptr;
             }
 
             void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
             {
                 PreventDefaultAction();
-
-                TC_LOG_ERROR("misc", "damage: %u procSpell: %u",
-                    eventInfo.GetDamageInfo()->GetDamage(), eventInfo.GetDamageInfo()->GetSpellInfo() ? eventInfo.GetDamageInfo()->GetSpellInfo()->Id : 0);
-
-                GetTarget()->CastCustomSpell(SPELL_ROGUE_BLADE_FLURRY_EXTRA_ATTACK, SPELLVALUE_BASE_POINT0, eventInfo.GetDamageInfo()->GetDamage(), _procTarget, true, NULL, aurEff);
+                if (DamageInfo* damageInfo = eventInfo.GetDamageInfo())
+                {
+                    int32 damage = damageInfo->GetDamage();
+                    GetTarget()->CastCustomSpell(SPELL_ROGUE_BLADE_FLURRY_EXTRA_ATTACK, SPELLVALUE_BASE_POINT0, damage, _procTarget, true, nullptr, aurEff);
+                }
             }
 
             void Register() override
             {
                 DoCheckProc += AuraCheckProcFn(spell_rog_blade_flurry_AuraScript::CheckProc);
-                if (m_scriptSpellId == SPELL_ROGUE_BLADE_FLURRY)
-                    OnEffectProc += AuraEffectProcFn(spell_rog_blade_flurry_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_MOD_POWER_REGEN_PERCENT);
-                else
-                    OnEffectProc += AuraEffectProcFn(spell_rog_blade_flurry_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_MOD_MELEE_HASTE);
+                OnEffectProc += AuraEffectProcFn(spell_rog_blade_flurry_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_MOD_MELEE_HASTE);
             }
 
         private:
@@ -123,7 +106,7 @@ class spell_rog_blade_flurry : public SpellScriptLoader
         }
 };
 
-// 31228 - Cheat Death
+// -31228 - Cheat Death
 class spell_rog_cheat_death : public SpellScriptLoader
 {
     public:
@@ -151,8 +134,7 @@ class spell_rog_cheat_death : public SpellScriptLoader
 
             bool Load() override
             {
-                // 6.x has basepoint = 0 !
-                absorbChance = GetSpellInfo()->GetEffect(EFFECT_0)->CalcValue();
+                absorbChance = GetSpellInfo()->Effects[EFFECT_0].CalcValue();
                 return GetUnitOwner()->GetTypeId() == TYPEID_PLAYER;
             }
 
@@ -194,56 +176,31 @@ class spell_rog_cheat_death : public SpellScriptLoader
         }
 };
 
-// -51625 - Deadly Brew
-class spell_rog_crippling_poison : public SpellScriptLoader
-{
-    public:
-        spell_rog_crippling_poison() : SpellScriptLoader("spell_rog_crippling_poison") { }
-
-        class spell_rog_crippling_poison_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_rog_crippling_poison_AuraScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/) override
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_CRIPPLING_POISON))
-                    return false;
-                return true;
-            }
-
-            void OnProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
-            {
-                PreventDefaultAction();
-                GetTarget()->CastSpell(eventInfo.GetProcTarget(), SPELL_ROGUE_CRIPPLING_POISON, true, NULL, aurEff);
-            }
-
-            void Register() override
-            {
-                OnEffectProc += AuraEffectProcFn(spell_rog_crippling_poison_AuraScript::OnProc, EFFECT_0, SPELL_AURA_DUMMY);
-            }
-        };
-
-        AuraScript* GetAuraScript() const override
-        {
-            return new spell_rog_crippling_poison_AuraScript();
-        }
-};
-
 // -51664 - Cut to the Chase
 class spell_rog_cut_to_the_chase : public SpellScriptLoader
 {
     public:
-        spell_rog_cut_to_the_chase () : SpellScriptLoader("spell_rog_cut_to_the_chase") { }
+        spell_rog_cut_to_the_chase() : SpellScriptLoader("spell_rog_cut_to_the_chase") { }
 
         class spell_rog_cut_to_the_chase_AuraScript : public AuraScript
         {
             PrepareAuraScript(spell_rog_cut_to_the_chase_AuraScript);
 
-            void HandleProc(AuraEffect const* /*aurEff*/, ProcEventInfo& /*eventInfo*/)
+            void HandleProc(AuraEffect const* /*aurEff*/, ProcEventInfo& eventInfo)
             {
                 PreventDefaultAction();
-                if (Aura* aur = GetTarget()->GetAura(SPELL_ROGUE_SILCE_AND_DICE))
-                    aur->SetDuration(aur->GetSpellInfo()->GetMaxDuration(), true);
+
+                // "refresh your Slice and Dice duration to its 5 combo point maximum"
+                Unit* caster = eventInfo.GetActor();
+                // lookup Slice and Dice
+                if (AuraEffect const* snd = caster->GetAuraEffect(SPELL_AURA_MOD_MELEE_HASTE, SPELLFAMILY_ROGUE, 0x00040000, 0x00000000, 0x00000000, caster->GetGUID()))
+                {
+                    // Max 5 cp duration
+                    uint32 countMax = snd->GetSpellInfo()->GetMaxDuration();
+
+                    snd->GetBase()->SetDuration(countMax, true);
+                    snd->GetBase()->SetMaxDuration(snd->GetBase()->GetDuration());
+                }
             }
 
             void Register() override
@@ -258,7 +215,42 @@ class spell_rog_cut_to_the_chase : public SpellScriptLoader
         }
 };
 
-// 2818 - Deadly Poison
+// -51625 - Deadly Brew
+class spell_rog_deadly_brew : public SpellScriptLoader
+{
+    public:
+        spell_rog_deadly_brew() : SpellScriptLoader("spell_rog_deadly_brew") { }
+
+        class spell_rog_deadly_brew_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_rog_deadly_brew_AuraScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) override
+            {
+                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_CRIPPLING_POISON))
+                    return false;
+                return true;
+            }
+
+            void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+            {
+                PreventDefaultAction();
+                eventInfo.GetActor()->CastSpell(eventInfo.GetProcTarget(), SPELL_ROGUE_CRIPPLING_POISON, true, nullptr, aurEff);
+            }
+
+            void Register() override
+            {
+                OnEffectProc += AuraEffectProcFn(spell_rog_deadly_brew_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_rog_deadly_brew_AuraScript();
+        }
+};
+
+// -2818 - Deadly Poison
 class spell_rog_deadly_poison : public SpellScriptLoader
 {
     public:
@@ -281,14 +273,11 @@ class spell_rog_deadly_poison : public SpellScriptLoader
                 return GetCaster()->GetTypeId() == TYPEID_PLAYER && GetCastItem();
             }
 
-            void HandleBeforeHit(SpellMissInfo missInfo)
+            void HandleBeforeHit()
             {
-                if (missInfo != SPELL_MISS_NONE)
-                    return;
-
                 if (Unit* target = GetHitUnit())
                     // Deadly Poison
-                    if (AuraEffect const* aurEff = target->GetAuraEffect(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_ROGUE, flag128(0x10000, 0x80000, 0), GetCaster()->GetGUID()))
+                    if (AuraEffect const* aurEff = target->GetAuraEffect(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_ROGUE, 0x10000, 0x80000, 0, GetCaster()->GetGUID()))
                         _stackAmount = aurEff->GetBase()->GetStackAmount();
             }
 
@@ -319,13 +308,13 @@ class spell_rog_deadly_poison : public SpellScriptLoader
 
                         for (uint8 s = 0; s < 3; ++s)
                         {
-                            if (enchant->Effect[s] != ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL)
+                            if (enchant->type[s] != ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL)
                                 continue;
 
-                            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(enchant->EffectSpellID[s]);
+                            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(enchant->spellid[s]);
                             if (!spellInfo)
                             {
-                                TC_LOG_ERROR("spells", "Player::CastItemCombatSpell Enchant %i, player (Name: %s, %s) cast unknown spell %i", enchant->ID, player->GetName().c_str(), player->GetGUID().ToString().c_str(), enchant->EffectSpellID[s]);
+                                TC_LOG_ERROR("spells", "Player::CastItemCombatSpell Enchant %i, player (Name: %s, GUID: %u) cast unknown spell %i", enchant->ID, player->GetName().c_str(), player->GetGUID().GetCounter(), enchant->spellid[s]);
                                 continue;
                             }
 
@@ -334,13 +323,13 @@ class spell_rog_deadly_poison : public SpellScriptLoader
                                 continue;
 
                             // Do not reproc deadly
-                            if (spellInfo->SpellFamilyFlags == flag128(0x10000, 0x80000, 0, 0))
+                            if (spellInfo->SpellFamilyFlags.IsEqual(0x10000, 0x80000, 0))
                                 continue;
 
                             if (spellInfo->IsPositive())
-                                player->CastSpell(player, enchant->EffectSpellID[s], true, item);
+                                player->CastSpell(player, enchant->spellid[s], true, item);
                             else
-                                player->CastSpell(target, enchant->EffectSpellID[s], true, item);
+                                player->CastSpell(target, enchant->spellid[s], true, item);
                         }
                     }
                 }
@@ -348,7 +337,7 @@ class spell_rog_deadly_poison : public SpellScriptLoader
 
             void Register() override
             {
-                BeforeHit += BeforeSpellHitFn(spell_rog_deadly_poison_SpellScript::HandleBeforeHit);
+                BeforeHit += SpellHitFn(spell_rog_deadly_poison_SpellScript::HandleBeforeHit);
                 AfterHit += SpellHitFn(spell_rog_deadly_poison_SpellScript::HandleAfterHit);
             }
 
@@ -461,40 +450,54 @@ class spell_rog_killing_spree : public SpellScriptLoader
         }
 };
 
-// 31666 - Master of Subtlety
-class spell_rog_master_of_subtlety : public SpellScriptLoader
+// -31130 - Nerves of Steel
+class spell_rog_nerves_of_steel : public SpellScriptLoader
 {
     public:
-        spell_rog_master_of_subtlety() : SpellScriptLoader("spell_rog_master_of_subtlety") { }
+        spell_rog_nerves_of_steel() : SpellScriptLoader("spell_rog_nerves_of_steel") { }
 
-        class spell_rog_master_of_subtlety_AuraScript : public AuraScript
+        class spell_rog_nerves_of_steel_AuraScript : public AuraScript
         {
-            PrepareAuraScript(spell_rog_master_of_subtlety_AuraScript);
+            PrepareAuraScript(spell_rog_nerves_of_steel_AuraScript);
 
-            bool Validate(SpellInfo const* /*spellInfo*/) override
+        public:
+            spell_rog_nerves_of_steel_AuraScript()
             {
-                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_MASTER_OF_SUBTLETY_DAMAGE_PERCENT))
-                    return false;
+                absorbPct = 0;
+            }
+
+        private:
+            uint32 absorbPct;
+
+            bool Load() override
+            {
+                absorbPct = GetSpellInfo()->Effects[EFFECT_0].CalcValue(GetCaster());
                 return true;
             }
 
-            void HandleEffectPeriodic(AuraEffect const* /*aurEff*/)
+            void CalculateAmount(AuraEffect const* /*aurEff*/, int32 & amount, bool & /*canBeRecalculated*/)
             {
-                Unit* target = GetTarget();
+                // Set absorbtion amount to unlimited
+                amount = -1;
+            }
 
-                if (!target->HasAuraType(SPELL_AURA_MOD_STEALTH))
-                    target->RemoveAurasDueToSpell(SPELL_ROGUE_MASTER_OF_SUBTLETY_DAMAGE_PERCENT);
+            void Absorb(AuraEffect* /*aurEff*/, DamageInfo & dmgInfo, uint32 & absorbAmount)
+            {
+                // reduces all damage taken while stun or fear
+                if (GetTarget()->GetUInt32Value(UNIT_FIELD_FLAGS) & (UNIT_FLAG_FLEEING) || (GetTarget()->GetUInt32Value(UNIT_FIELD_FLAGS) & (UNIT_FLAG_STUNNED) && GetTarget()->HasAuraWithMechanic(1<<MECHANIC_STUN)))
+                    absorbAmount = CalculatePct(dmgInfo.GetDamage(), absorbPct);
             }
 
             void Register() override
             {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_rog_master_of_subtlety_AuraScript::HandleEffectPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_rog_nerves_of_steel_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
+                 OnEffectAbsorb += AuraEffectAbsorbFn(spell_rog_nerves_of_steel_AuraScript::Absorb, EFFECT_0);
             }
         };
 
         AuraScript* GetAuraScript() const override
         {
-            return new spell_rog_master_of_subtlety_AuraScript();
+            return new spell_rog_nerves_of_steel_AuraScript();
         }
 };
 
@@ -523,19 +526,19 @@ class spell_rog_preparation : public SpellScriptLoader
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
                 Unit* caster = GetCaster();
-                caster->GetSpellHistory()->ResetCooldowns([caster](SpellHistory::CooldownStorageType::iterator itr)
+                caster->GetSpellHistory()->ResetCooldowns([caster](SpellHistory::CooldownStorageType::iterator itr) -> bool
                 {
                     SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(itr->first);
                     if (spellInfo->SpellFamilyName != SPELLFAMILY_ROGUE)
                         return false;
 
-                    return (spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_ROGUE_SHADOWSTEP ||           // Shadowstep
-                        spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG0_ROGUE_VAN_SPRINT) ||              // Vanish, Sprint
-                        // Glyph of Preparation
+                    return (spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_ROGUE_COLDB_SHADOWSTEP ||  // Cold Blood, Shadowstep
+                        spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_ROGUE_VAN_EVAS_SPRINT) ||       // Vanish, Evasion, Sprint
                         (caster->HasAura(SPELL_ROGUE_GLYPH_OF_PREPARATION) &&
-                        (spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_ROGUE_DISMANTLE_SMOKE_BOMB ||    // Dismantle, Smoke Bomb
-                        spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG0_ROGUE_KICK));                     // Kick
-
+                        (spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_ROGUE_DISMANTLE ||            // Dismantle
+                        spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_ROGUE_KICK ||                   // Kick
+                        (spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_ROGUE_BLADE_FLURRY &&          // Blade Flurry
+                        spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_ROGUE_BLADE_FLURRY)));
                 }, true);
             }
 
@@ -551,60 +554,98 @@ class spell_rog_preparation : public SpellScriptLoader
         }
 };
 
-// 73651 - Recuperate
-class spell_rog_recuperate : public SpellScriptLoader
+// -51685 - Prey on the Weak
+class spell_rog_prey_on_the_weak : public SpellScriptLoader
 {
     public:
-        spell_rog_recuperate() : SpellScriptLoader("spell_rog_recuperate") { }
+        spell_rog_prey_on_the_weak() : SpellScriptLoader("spell_rog_prey_on_the_weak") { }
 
-        class spell_rog_recuperate_AuraScript : public AuraScript
+        class spell_rog_prey_on_the_weak_AuraScript : public AuraScript
         {
-            PrepareAuraScript(spell_rog_recuperate_AuraScript);
+            PrepareAuraScript(spell_rog_prey_on_the_weak_AuraScript);
 
-            bool Load() override
+            bool Validate(SpellInfo const* /*spellInfo*/) override
             {
-                return GetCaster()->GetTypeId() == TYPEID_PLAYER;
+                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_PREY_ON_THE_WEAK))
+                    return false;
+                return true;
             }
 
-            void OnPeriodic(AuraEffect const* /*aurEff*/)
+            void HandleEffectPeriodic(AuraEffect const* /*aurEff*/)
             {
-                if (Unit* caster = GetCaster())
-                    if (AuraEffect* effect = GetAura()->GetEffect(EFFECT_0))
-                        effect->RecalculateAmount(caster);
-            }
-
-            void CalculateBonus(AuraEffect const* /*aurEff*/, int32& amount, bool& canBeRecalculated)
-            {
-                canBeRecalculated = false;
-                if (Unit* caster = GetCaster())
+                Unit* target = GetTarget();
+                Unit* victim = target->GetVictim();
+                if (victim && (target->GetHealthPct() > victim->GetHealthPct()))
                 {
-                    int32 baseAmount = GetSpellInfo()->GetEffect(EFFECT_0)->CalcValue(caster) * 1000;
-                    // Improved Recuperate
-                    if (AuraEffect const* auraEffect = caster->GetDummyAuraEffect(SPELLFAMILY_ROGUE, ICON_ROGUE_IMPROVED_RECUPERATE, EFFECT_0))
-                        baseAmount += auraEffect->GetAmount();
-
-                    amount = CalculatePct(caster->GetMaxHealth(), float(baseAmount) / 1000.0f);
+                    if (!target->HasAura(SPELL_ROGUE_PREY_ON_THE_WEAK))
+                    {
+                        int32 bp = GetSpellInfo()->Effects[EFFECT_0].CalcValue();
+                        target->CastCustomSpell(target, SPELL_ROGUE_PREY_ON_THE_WEAK, &bp, nullptr, nullptr, true);
+                    }
                 }
+                else
+                    target->RemoveAurasDueToSpell(SPELL_ROGUE_PREY_ON_THE_WEAK);
             }
 
             void Register() override
             {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_rog_recuperate_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_HEAL);
-                DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_rog_recuperate_AuraScript::CalculateBonus, EFFECT_0, SPELL_AURA_PERIODIC_HEAL);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_rog_prey_on_the_weak_AuraScript::HandleEffectPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
             }
         };
 
         AuraScript* GetAuraScript() const override
         {
-            return new spell_rog_recuperate_AuraScript();
+            return new spell_rog_prey_on_the_weak_AuraScript();
         }
 };
 
-// 1943 - Rupture
+// -31244 - Quick Recovery
+class spell_rog_quick_recovery : public SpellScriptLoader
+{
+    public:
+        spell_rog_quick_recovery() : SpellScriptLoader("spell_rog_quick_recovery") { }
+
+        class spell_rog_quick_recovery_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_rog_quick_recovery_AuraScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) override
+            {
+                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_QUICK_RECOVERY_ENERGY))
+                    return false;
+                return true;
+            }
+
+            void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+            {
+                PreventDefaultAction();
+                SpellInfo const* spellInfo = eventInfo.GetSpellInfo();
+                if (!spellInfo)
+                    return;
+
+                Unit* caster = eventInfo.GetActor();
+                int32 amount = CalculatePct(spellInfo->CalcPowerCost(caster, spellInfo->GetSchoolMask()), aurEff->GetAmount());
+                caster->CastCustomSpell(SPELL_ROGUE_QUICK_RECOVERY_ENERGY, SPELLVALUE_BASE_POINT0, amount, (Unit*)nullptr, true, nullptr, aurEff);
+            }
+
+            void Register() override
+            {
+                OnEffectProc += AuraEffectProcFn(spell_rog_quick_recovery_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_rog_quick_recovery_AuraScript();
+        }
+};
+
+// -1943 - Rupture
+static char const* const RuptureScriptName = "spell_rog_rupture";
 class spell_rog_rupture : public SpellScriptLoader
 {
     public:
-        spell_rog_rupture() : SpellScriptLoader("spell_rog_rupture") { }
+        spell_rog_rupture() : SpellScriptLoader(RuptureScriptName) { }
 
         class spell_rog_rupture_AuraScript : public AuraScript
         {
@@ -613,6 +654,7 @@ class spell_rog_rupture : public SpellScriptLoader
             bool Load() override
             {
                 Unit* caster = GetCaster();
+                BonusDuration = 0;
                 return caster && caster->GetTypeId() == TYPEID_PLAYER;
             }
 
@@ -632,7 +674,7 @@ class spell_rog_rupture : public SpellScriptLoader
                         0.0375f         // 5 points: ${($m1 + $b1*5 + 0.0375 * $AP) * 8} damage over 16 secs
                     };
 
-                    uint32 cp = caster->ToPlayer()->GetComboPoints();
+                    uint8 cp = caster->ToPlayer()->GetComboPoints();
                     if (cp > 5)
                         cp = 5;
 
@@ -640,15 +682,147 @@ class spell_rog_rupture : public SpellScriptLoader
                 }
             }
 
+            void ResetDuration(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                BonusDuration = 0;
+            }
+
             void Register() override
             {
                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_rog_rupture_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE);
+                AfterEffectApply += AuraEffectApplyFn(spell_rog_rupture_AuraScript::ResetDuration, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAPPLY);
             }
+
+        public:
+            // For Glyph of Backstab use
+            uint32 BonusDuration;
         };
 
         AuraScript* GetAuraScript() const override
         {
             return new spell_rog_rupture_AuraScript();
+        }
+};
+
+// 56800 - Glyph of Backstab (dummy)
+class spell_rog_glyph_of_backstab : public SpellScriptLoader
+{
+    public:
+        spell_rog_glyph_of_backstab() : SpellScriptLoader("spell_rog_glyph_of_backstab") { }
+
+        class spell_rog_glyph_of_backstab_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_rog_glyph_of_backstab_AuraScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) override
+            {
+                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_GLYPH_OF_BACKSTAB_TRIGGER))
+                    return false;
+                return true;
+            }
+
+            void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+            {
+                PreventDefaultAction();
+                eventInfo.GetActor()->CastSpell(eventInfo.GetProcTarget(), SPELL_ROGUE_GLYPH_OF_BACKSTAB_TRIGGER, true, nullptr, aurEff);
+            }
+
+            void Register() override
+            {
+                OnEffectProc += AuraEffectProcFn(spell_rog_glyph_of_backstab_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_rog_glyph_of_backstab_AuraScript();
+        }
+};
+
+// 63975 - Glyph of Backstab (triggered - serverside)
+class spell_rog_glyph_of_backstab_triggered : public SpellScriptLoader
+{
+    public:
+        spell_rog_glyph_of_backstab_triggered() : SpellScriptLoader("spell_rog_glyph_of_backstab_triggered") { }
+
+        class spell_rog_glyph_of_backstab_triggered_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_rog_glyph_of_backstab_triggered_SpellScript);
+
+            typedef spell_rog_rupture::spell_rog_rupture_AuraScript RuptureAuraScript;
+
+            void HandleScript(SpellEffIndex effIndex)
+            {
+                PreventHitDefaultEffect(effIndex);
+
+                Unit* caster = GetCaster();
+                // search our Rupture aura on target
+                if (AuraEffect* aurEff = GetHitUnit()->GetAuraEffect(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_ROGUE, 0x00100000, 0, 0, caster->GetGUID()))
+                {
+                    RuptureAuraScript* ruptureAuraScript = dynamic_cast<RuptureAuraScript*>(aurEff->GetBase()->GetScriptByName(RuptureScriptName));
+                    if (!ruptureAuraScript)
+                        return;
+
+                    uint32& bonusDuration = ruptureAuraScript->BonusDuration;
+
+                    // already includes duration mod from Glyph of Rupture
+                    uint32 countMin = aurEff->GetBase()->GetMaxDuration();
+                    uint32 countMax = countMin - bonusDuration;
+
+                    // this glyph
+                    countMax += 6000;
+
+                    if (countMin < countMax)
+                    {
+                        bonusDuration += 2000;
+
+                        aurEff->GetBase()->SetDuration(aurEff->GetBase()->GetDuration() + 2000);
+                        aurEff->GetBase()->SetMaxDuration(countMin + 2000);
+                    }
+
+                }
+            }
+
+            void Register() override
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_rog_glyph_of_backstab_triggered_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+            }
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_rog_glyph_of_backstab_triggered_SpellScript();
+        }
+};
+
+// -13983 - Setup
+class spell_rog_setup : public SpellScriptLoader
+{
+    public:
+        spell_rog_setup() : SpellScriptLoader("spell_rog_setup") { }
+
+        class spell_rog_setup_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_rog_setup_AuraScript);
+
+            bool CheckProc(ProcEventInfo& eventInfo)
+            {
+                if (Player* target = GetTarget()->ToPlayer())
+                    if (eventInfo.GetActor() == target->GetSelectedUnit())
+                        return true;
+
+                return false;
+            }
+
+            void Register() override
+            {
+                DoCheckProc += AuraCheckProcFn(spell_rog_setup_AuraScript::CheckProc);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_rog_setup_AuraScript();
         }
 };
 
@@ -690,148 +864,6 @@ class spell_rog_shiv : public SpellScriptLoader
         SpellScript* GetSpellScript() const override
         {
             return new spell_rog_shiv_SpellScript();
-        }
-};
-
-// 1784 - Stealth
-class spell_rog_stealth : public SpellScriptLoader
-{
-    public:
-        spell_rog_stealth() : SpellScriptLoader("spell_rog_stealth") { }
-
-        class spell_rog_stealth_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_rog_stealth_AuraScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/) override
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_MASTER_OF_SUBTLETY_PASSIVE) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_ROGUE_MASTER_OF_SUBTLETY_DAMAGE_PERCENT) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_ROGUE_MASTER_OF_SUBTLETY_PERIODIC) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_ROGUE_SANCTUARY) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_ROGUE_STEALTH_STEALTH_AURA) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_ROGUE_STEALTH_SHAPESHIFT_AURA))
-                    return false;
-                return true;
-            }
-
-            void HandleEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                Unit* target = GetTarget();
-
-                // Master of Subtlety
-                if (AuraEffect const* aurEff = target->GetAuraEffect(SPELL_ROGUE_MASTER_OF_SUBTLETY_PASSIVE, EFFECT_0))
-                    target->CastCustomSpell(SPELL_ROGUE_MASTER_OF_SUBTLETY_DAMAGE_PERCENT, SPELLVALUE_BASE_POINT0, aurEff->GetAmount(), target, true);
-
-                target->CastSpell(target, SPELL_ROGUE_SANCTUARY, TRIGGERED_FULL_MASK);
-                target->CastSpell(target, SPELL_ROGUE_STEALTH_STEALTH_AURA, TRIGGERED_FULL_MASK);
-                target->CastSpell(target, SPELL_ROGUE_STEALTH_SHAPESHIFT_AURA, TRIGGERED_FULL_MASK);
-            }
-
-            void HandleEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                Unit* target = GetTarget();
-
-                // Master of subtlety
-                if (target->HasAura(SPELL_ROGUE_MASTER_OF_SUBTLETY_PASSIVE))
-                    target->CastSpell(target, SPELL_ROGUE_MASTER_OF_SUBTLETY_PERIODIC, true);
-
-                target->RemoveAurasDueToSpell(SPELL_ROGUE_STEALTH_STEALTH_AURA);
-                target->RemoveAurasDueToSpell(SPELL_ROGUE_STEALTH_SHAPESHIFT_AURA);
-            }
-
-            void Register() override
-            {
-                AfterEffectApply += AuraEffectApplyFn(spell_rog_stealth_AuraScript::HandleEffectApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-                AfterEffectRemove += AuraEffectRemoveFn(spell_rog_stealth_AuraScript::HandleEffectRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const override
-        {
-            return new spell_rog_stealth_AuraScript();
-        }
-};
-
-// 1856 - Vanish
-class spell_rog_vanish : public SpellScriptLoader
-{
-    public:
-        spell_rog_vanish() : SpellScriptLoader("spell_rog_vanish") { }
-
-        class spell_rog_vanish_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_rog_vanish_SpellScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/) override
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_VANISH_AURA) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_ROGUE_STEALTH_SHAPESHIFT_AURA))
-                    return false;
-                return true;
-            }
-
-            void OnLaunchTarget(SpellEffIndex effIndex)
-            {
-                PreventHitDefaultEffect(effIndex);
-
-                Unit* target = GetHitUnit();
-
-                target->RemoveMovementImpairingAuras();
-                target->RemoveAurasByType(SPELL_AURA_MOD_STALKED);
-                if (target->GetTypeId() != TYPEID_PLAYER)
-                    return;
-
-                if (target->HasAura(SPELL_ROGUE_VANISH_AURA))
-                    return;
-
-                target->CastSpell(target, SPELL_ROGUE_VANISH_AURA, TRIGGERED_FULL_MASK);
-                target->CastSpell(target, SPELL_ROGUE_STEALTH_SHAPESHIFT_AURA, TRIGGERED_FULL_MASK);
-            }
-
-            void Register() override
-            {
-                OnEffectLaunchTarget += SpellEffectFn(spell_rog_vanish_SpellScript::OnLaunchTarget, EFFECT_1, SPELL_EFFECT_TRIGGER_SPELL);
-            }
-        };
-
-        SpellScript* GetSpellScript() const override
-        {
-            return new spell_rog_vanish_SpellScript();
-        }
-};
-
-// 11327 - Vanish
-class spell_rog_vanish_aura : public SpellScriptLoader
-{
-    public:
-        spell_rog_vanish_aura() : SpellScriptLoader("spell_rog_vanish_aura") { }
-
-        class spell_rog_vanish_aura_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_rog_vanish_aura_AuraScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/) override
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_STEALTH))
-                    return false;
-                return true;
-            }
-
-            void HandleEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                GetTarget()->CastSpell(GetTarget(), SPELL_ROGUE_STEALTH, TRIGGERED_FULL_MASK);
-            }
-
-            void Register() override
-            {
-                AfterEffectRemove += AuraEffectRemoveFn(spell_rog_vanish_aura_AuraScript::HandleEffectRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const override
-        {
-            return new spell_rog_vanish_aura_AuraScript();
         }
 };
 
@@ -927,41 +959,7 @@ class spell_rog_tricks_of_the_trade_proc : public SpellScriptLoader
         }
 };
 
-class spell_rog_serrated_blades : public SpellScriptLoader
-{
-public:
-    spell_rog_serrated_blades() : SpellScriptLoader("spell_rog_serrated_blades") { }
-
-    class spell_rog_serrated_blades_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_rog_serrated_blades_SpellScript);
-
-        void HandleHit()
-        {
-            if (AuraEffect* blade = GetCaster()->GetAuraEffectOfRankedSpell(SPELL_ROGUE_SERRATED_BLADES_R1, EFFECT_0))
-            {
-                uint32 combo = GetCaster()->ToPlayer()->GetComboPoints();
-
-                if (roll_chance_i(blade->GetAmount() * combo))
-                    if (Aura* dot = GetHitUnit()->GetAura(SPELL_ROGUE_RUPTURE, GetCaster()->GetGUID()))
-                        dot->RefreshDuration();
-
-            }
-        }
-
-        void Register() override
-        {
-            OnHit += SpellHitFn(spell_rog_serrated_blades_SpellScript::HandleHit);
-        }
-    };
-
-    SpellScript* GetSpellScript() const override
-    {
-        return new spell_rog_serrated_blades_SpellScript();
-    }
-};
-
-// 51701 - Honor Among Thieves
+// 51698,51700,51701 - Honor Among Thieves
 class spell_rog_honor_among_thieves : public SpellScriptLoader
 {
 public:
@@ -971,17 +969,39 @@ public:
     {
         PrepareAuraScript(spell_rog_honor_among_thieves_AuraScript);
 
+        bool Validate(SpellInfo const* spellInfo) override
+        {
+            if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_HONOR_AMONG_THIEVES_2) ||
+                !sSpellMgr->GetSpellInfo(spellInfo->Effects[EFFECT_0].TriggerSpell))
+                return false;
+            return true;
+        }
+
+        bool CheckProc(ProcEventInfo& /*eventInfo*/)
+        {
+            Unit* caster = GetCaster();
+            if (!caster || caster->HasAura(SPELL_ROGUE_HONOR_AMONG_THIEVES_2))
+                return false;
+
+            return true;
+        }
+
         void HandleProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
         {
             PreventDefaultAction();
 
-            Unit* target = GetUnitOwner();
-            target->CastSpell(target, SPELL_ROGUE_HONOR_AMONG_THIEVES_PROC, TRIGGERED_FULL_MASK, nullptr, aurEff);
+            Unit* caster = GetCaster();
+            if (!caster)
+                return;
+
+            Unit* target = GetTarget();
+            target->CastSpell(target, GetSpellInfo()->Effects[aurEff->GetEffIndex()].TriggerSpell, true, nullptr, aurEff, caster->GetGUID());
         }
 
         void Register() override
         {
-            OnEffectProc += AuraEffectProcFn(spell_rog_honor_among_thieves_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+            DoCheckProc += AuraCheckProcFn(spell_rog_honor_among_thieves_AuraScript::CheckProc);
+            OnEffectProc += AuraEffectProcFn(spell_rog_honor_among_thieves_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL);
         }
     };
 
@@ -991,88 +1011,167 @@ public:
     }
 };
 
-// 2098 - Eviscerate
-class spell_rog_eviscerate : public SpellScriptLoader
+// 52916 - Honor Among Thieves (Proc)
+class spell_rog_honor_among_thieves_proc : public SpellScriptLoader
 {
 public:
-    spell_rog_eviscerate() : SpellScriptLoader("spell_rog_eviscerate") { }
+    spell_rog_honor_among_thieves_proc() : SpellScriptLoader("spell_rog_honor_among_thieves_proc") { }
 
-    class spell_rog_eviscerate_SpellScript : public SpellScript
+    class spell_rog_honor_among_thieves_proc_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_rog_eviscerate_SpellScript);
+        PrepareSpellScript(spell_rog_honor_among_thieves_proc_SpellScript);
 
-        void CalculateDamage(SpellEffIndex /*effIndex*/)
+        bool Validate(SpellInfo const* /*spellInfo*/) override
         {
-            int32 damagePerCombo = int32(GetCaster()->GetTotalAttackPowerValue(BASE_ATTACK) * 0.559f);
-            if (AuraEffect const* t5 = GetCaster()->GetAuraEffect(SPELL_ROGUE_T5_2P_SET_BONUS, EFFECT_0))
-                damagePerCombo += t5->GetAmount();
+            if (!sSpellMgr->GetSpellInfo(SPELL_ROGUE_HONOR_AMONG_THIEVES_PROC))
+                return false;
 
-            SetEffectValue(GetEffectValue() + damagePerCombo * GetCaster()->GetPower(POWER_COMBO_POINTS));
+            return true;
+        }
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            targets.clear();
+
+            Unit* target = GetOriginalCaster();
+            if (!target)
+                return;
+
+            targets.push_back(target);
         }
 
         void Register() override
         {
-            OnEffectLaunchTarget += SpellEffectFn(spell_rog_eviscerate_SpellScript::CalculateDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_rog_honor_among_thieves_proc_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CASTER_AREA_PARTY);
         }
     };
 
     SpellScript* GetSpellScript() const override
     {
-        return new spell_rog_eviscerate_SpellScript();
+        return new spell_rog_honor_among_thieves_proc_SpellScript();
+    }
+
+    class spell_rog_honor_among_thieves_proc_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_rog_honor_among_thieves_proc_AuraScript);
+
+        void HandleEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            Unit* caster = GetCaster();
+            if (!caster)
+                return;
+
+            if (Player* player = caster->ToPlayer())
+                player->CastSpell((Unit*)nullptr, SPELL_ROGUE_HONOR_AMONG_THIEVES_2, true);
+        }
+
+        void Register() override
+        {
+            AfterEffectApply += AuraEffectApplyFn(spell_rog_honor_among_thieves_proc_AuraScript::HandleEffectApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
+        }
+    };
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_rog_honor_among_thieves_proc_AuraScript();
     }
 };
 
-// 32645 - Envenom
-class spell_rog_envenom : public SpellScriptLoader
+// -51627 - Turn the Tables
+class spell_rog_turn_the_tables : public SpellScriptLoader
 {
-public:
-    spell_rog_envenom() : SpellScriptLoader("spell_rog_envenom") { }
+    public:
+        spell_rog_turn_the_tables() : SpellScriptLoader("spell_rog_turn_the_tables") { }
 
-    class spell_rog_envenom_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_rog_envenom_SpellScript);
-
-        void CalculateDamage(SpellEffIndex /*effIndex*/)
+        class spell_rog_turn_the_tables_AuraScript : public AuraScript
         {
-            int32 damagePerCombo = int32(GetCaster()->GetTotalAttackPowerValue(BASE_ATTACK) * 0.417f);
-            if (AuraEffect const* t5 = GetCaster()->GetAuraEffect(SPELL_ROGUE_T5_2P_SET_BONUS, EFFECT_0))
-                damagePerCombo += t5->GetAmount();
+            PrepareAuraScript(spell_rog_turn_the_tables_AuraScript);
 
-            SetEffectValue(GetEffectValue() + damagePerCombo * GetCaster()->GetPower(POWER_COMBO_POINTS));
-        }
+            bool Validate(SpellInfo const* spellInfo) override
+            {
+                if (!sSpellMgr->GetSpellInfo(spellInfo->Effects[EFFECT_0].TriggerSpell))
+                    return false;
+                return true;
+            }
 
-        void Register() override
+            void HandleProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
+            {
+                PreventDefaultAction();
+
+                Unit* caster = GetCaster();
+                if (!caster)
+                    return;
+
+                Unit* target = GetTarget();
+                target->CastSpell((Unit*)nullptr, GetSpellInfo()->Effects[EFFECT_0].TriggerSpell, true, nullptr, aurEff, caster->GetGUID());
+            }
+
+            void Register() override
+            {
+                OnEffectProc += AuraEffectProcFn(spell_rog_turn_the_tables_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
         {
-            OnEffectLaunchTarget += SpellEffectFn(spell_rog_envenom_SpellScript::CalculateDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+            return new spell_rog_turn_the_tables_AuraScript();
         }
-    };
+};
 
-    SpellScript* GetSpellScript() const override
-    {
-        return new spell_rog_envenom_SpellScript();
-    }
+// 52910,52914,52915 - Turn the Tables proc
+class spell_rog_turn_the_tables_proc : public SpellScriptLoader
+{
+    public:
+        spell_rog_turn_the_tables_proc() : SpellScriptLoader("spell_rog_turn_the_tables_proc") { }
+
+        class spell_rog_turn_the_tables_proc_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_rog_turn_the_tables_proc_SpellScript);
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                targets.clear();
+
+                Unit* target = GetOriginalCaster();
+                if (!target)
+                    return;
+
+                targets.push_back(target);
+            }
+
+            void Register() override
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_rog_turn_the_tables_proc_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CASTER_AREA_RAID);
+            }
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_rog_turn_the_tables_proc_SpellScript();
+        }
 };
 
 void AddSC_rogue_spell_scripts()
 {
     new spell_rog_blade_flurry();
     new spell_rog_cheat_death();
-    new spell_rog_crippling_poison();
     new spell_rog_cut_to_the_chase();
+    new spell_rog_deadly_brew();
     new spell_rog_deadly_poison();
     new spell_rog_killing_spree();
-    new spell_rog_master_of_subtlety();
+    new spell_rog_nerves_of_steel();
     new spell_rog_preparation();
-    new spell_rog_recuperate();
+    new spell_rog_prey_on_the_weak();
+    new spell_rog_quick_recovery();
     new spell_rog_rupture();
+    new spell_rog_glyph_of_backstab();
+    new spell_rog_glyph_of_backstab_triggered();
+    new spell_rog_setup();
     new spell_rog_shiv();
-    new spell_rog_stealth();
-    new spell_rog_vanish();
-    new spell_rog_vanish_aura();
     new spell_rog_tricks_of_the_trade();
     new spell_rog_tricks_of_the_trade_proc();
-    new spell_rog_serrated_blades();
     new spell_rog_honor_among_thieves();
-    new spell_rog_eviscerate();
-    new spell_rog_envenom();
+    new spell_rog_honor_among_thieves_proc();
+    new spell_rog_turn_the_tables();
+    new spell_rog_turn_the_tables_proc();
 }

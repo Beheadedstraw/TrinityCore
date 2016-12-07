@@ -63,6 +63,7 @@ enum Creatures
     NPC_PORTAL                  = 17265,
 };
 
+
 class npc_kilrek : public CreatureScript
 {
 public:
@@ -159,7 +160,7 @@ public:
 
         void JustDied(Unit* /*killer*/) override
         {
-            if (!SacrificeGUID.IsEmpty())
+            if (SacrificeGUID)
             {
                 Unit* Sacrifice = ObjectAccessor::GetUnit(*me, SacrificeGUID);
                 if (Sacrifice)
@@ -300,7 +301,7 @@ public:
         {
             for (uint8 i = 0; i < 2; ++i)
             {
-                if (!PortalGUID[i].IsEmpty())
+                if (PortalGUID[i])
                 {
                     if (Creature* pPortal = ObjectAccessor::GetCreature(*me, PortalGUID[i]))
                     {
@@ -358,7 +359,7 @@ public:
         {
             for (uint8 i = 0; i < 2; ++i)
             {
-                if (!PortalGUID[i].IsEmpty())
+                if (PortalGUID[i])
                 {
                     if (Creature* pPortal = ObjectAccessor::GetCreature((*me), PortalGUID[i]))
                         pPortal->DespawnOrUnsummon();
@@ -409,7 +410,7 @@ public:
                 if (!PortalGUID[1])
                     DoCastVictim(SPELL_FIENDISH_PORTAL_1, false);
 
-                if (!PortalGUID[0].IsEmpty() && !PortalGUID[1].IsEmpty())
+                if (PortalGUID[0] && PortalGUID[1])
                 {
                     if (Creature* pPortal = ObjectAccessor::GetCreature(*me, PortalGUID[urand(0, 1)]))
                         pPortal->CastSpell(me->GetVictim(), SPELL_SUMMON_FIENDISIMP, false);

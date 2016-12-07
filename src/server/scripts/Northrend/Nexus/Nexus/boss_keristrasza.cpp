@@ -111,15 +111,21 @@ class boss_keristrasza : public CreatureScript
                     Talk(SAY_SLAY);
             }
 
-            bool CheckContainmentSpheres(bool removePrison = false)
+            bool CheckContainmentSpheres(bool remove_prison = false)
             {
-                for (uint32 i = ANOMALUS_CONTAINMET_SPHERE; i < (ANOMALUS_CONTAINMET_SPHERE + DATA_CONTAINMENT_SPHERES); ++i)
+                ContainmentSphereGUIDs[0] = instance->GetGuidData(ANOMALUS_CONTAINMET_SPHERE);
+                ContainmentSphereGUIDs[1] = instance->GetGuidData(ORMOROKS_CONTAINMET_SPHERE);
+                ContainmentSphereGUIDs[2] = instance->GetGuidData(TELESTRAS_CONTAINMET_SPHERE);
+
+                for (uint8 i = 0; i < DATA_CONTAINMENT_SPHERES; ++i)
                 {
-                    GameObject* containmentSpheres = ObjectAccessor::GetGameObject(*me, instance->GetGuidData(i));
-                    if (!containmentSpheres || containmentSpheres->GetGoState() != GO_STATE_ACTIVE)
+                    GameObject* ContainmentSphere = ObjectAccessor::GetGameObject(*me, ContainmentSphereGUIDs[i]);
+                    if (!ContainmentSphere)
+                        return false;
+                    if (ContainmentSphere->GetGoState() != GO_STATE_ACTIVE)
                         return false;
                 }
-                if (removePrison)
+                if (remove_prison)
                     RemovePrison(true);
                 return true;
             }
@@ -191,6 +197,9 @@ class boss_keristrasza : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -199,7 +208,7 @@ class boss_keristrasza : public CreatureScript
         private:
             bool _intenseCold;
             bool _enrage;
-
+            ObjectGuid ContainmentSphereGUIDs[DATA_CONTAINMENT_SPHERES];
         public:
             GuidList _intenseColdList;
         };
@@ -277,9 +286,9 @@ class achievement_intense_cold : public AchievementCriteriaScript
             if (!target)
                 return false;
 
-            GuidList const& _intenseColdList = ENSURE_AI(boss_keristrasza::boss_keristraszaAI, target->ToCreature()->AI())->_intenseColdList;
+            GuidList _intenseColdList = ENSURE_AI(boss_keristrasza::boss_keristraszaAI, target->ToCreature()->AI())->_intenseColdList;
             if (!_intenseColdList.empty())
-                for (GuidList::const_iterator itr = _intenseColdList.begin(); itr != _intenseColdList.end(); ++itr)
+                for (GuidList::iterator itr = _intenseColdList.begin(); itr != _intenseColdList.end(); ++itr)
                     if (player->GetGUID() == *itr)
                         return false;
 

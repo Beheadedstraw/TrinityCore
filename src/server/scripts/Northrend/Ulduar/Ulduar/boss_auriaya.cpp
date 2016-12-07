@@ -273,6 +273,9 @@ class boss_auriaya : public CreatureScript
                             events.CancelEvent(EVENT_BERSERK);
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -378,6 +381,9 @@ class npc_sanctum_sentry : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -453,6 +459,9 @@ class npc_feral_defender : public CreatureScript
                     default:
                         break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -540,6 +549,7 @@ class spell_auriaya_sentinel_blast : public SpellScriptLoader
             return new spell_auriaya_sentinel_blast_SpellScript();
         }
 };
+
 
 class achievement_nine_lives : public AchievementCriteriaScript
 {

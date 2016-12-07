@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 5;
 
-enum GDDataTypes
+enum DataTypes
 {
     // Encounter Ids // Encounter States // Boss GUIDs
     DATA_SLAD_RAN                    = 0,
@@ -49,7 +49,7 @@ enum GDDataTypes
     DATA_STATUE_ACTIVATE             = 15,
 };
 
-enum GDCreatureIds
+enum CreatureIds
 {
     NPC_SLAD_RAN                     = 29304,
     NPC_MOORABI                      = 29305,
@@ -60,7 +60,7 @@ enum GDCreatureIds
     NPC_ALTAR_TRIGGER                = 30298
 };
 
-enum GDGameObjectIds
+enum GameObjectIds
 {
     GO_SLAD_RAN_ALTAR                = 192518,
     GO_MOORABI_ALTAR                 = 192519,
@@ -78,14 +78,14 @@ enum GDGameObjectIds
     GO_COLLISION                     = 192633,
 };
 
-enum GDSpellIds
+enum SpellIds
 {
     SPELL_FIRE_BEAM_MAMMOTH          = 57068,
     SPELL_FIRE_BEAM_SNAKE            = 57071,
     SPELL_FIRE_BEAM_ELEMENTAL        = 57072
 };
 
-enum GDInstanceMisc
+enum InstanceMisc
 {
     TIMER_STATUE_ACTIVATION          = 3500
 };

@@ -52,8 +52,7 @@ enum CreatureSpells
     SPELL_MAGIC_PULL                            = 50770,
     SPELL_SUMMON_PLAYERS                        = 54164,
     SPELL_POWER_BALL_VISUAL                     = 54141,
-    SPELL_POWER_BALL_DAMAGE_TRIGGER             = 54207,
-    SPELL_POWER_BALL_DAMAGE_TRIGGER_H           = 59476
+    SPELL_POWER_BALL_DAMAGE_TRIGGER             = 54207
 };
 
 enum Yells
@@ -204,7 +203,7 @@ class npc_ethereal_sphere : public CreatureScript
                 ScheduledTasks();
 
                 DoCast(me, SPELL_POWER_BALL_VISUAL);
-                DoCast(me, DUNGEON_MODE(SPELL_POWER_BALL_DAMAGE_TRIGGER, SPELL_POWER_BALL_DAMAGE_TRIGGER_H));
+                DoCast(me, SPELL_POWER_BALL_DAMAGE_TRIGGER);
 
                 me->DespawnOrUnsummon(40000);
             }

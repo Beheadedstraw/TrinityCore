@@ -135,7 +135,7 @@ class boss_ignis : public CreatureScript
                 if (Vehicle* _vehicle = me->GetVehicleKit())
                     _vehicle->RemoveAllPassengers();
 
-                instance->DoStopCriteriaTimer(CRITERIA_TIMED_TYPE_EVENT, ACHIEVEMENT_IGNIS_START_EVENT);
+                instance->DoStopTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEVEMENT_IGNIS_START_EVENT);
             }
 
             void EnterCombat(Unit* /*who*/) override
@@ -149,7 +149,7 @@ class boss_ignis : public CreatureScript
                 events.ScheduleEvent(EVENT_END_POT, 40000);
                 events.ScheduleEvent(EVENT_BERSERK, 480000);
                 Initialize();
-                instance->DoStartCriteriaTimer(CRITERIA_TIMED_TYPE_EVENT, ACHIEVEMENT_IGNIS_START_EVENT);
+                instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEVEMENT_IGNIS_START_EVENT);
             }
 
             void JustDied(Unit* /*killer*/) override
@@ -178,7 +178,8 @@ class boss_ignis : public CreatureScript
                 {
                     summon->setFaction(16);
                     summon->SetReactState(REACT_AGGRESSIVE);
-                    summon->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PACIFIED | UNIT_FLAG_STUNNED | UNIT_FLAG_DISABLE_MOVE);
+                    summon->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PACIFIED | UNIT_FLAG_STUNNED | UNIT_FLAG_IMMUNE_TO_PC);
+                    summon->SetControlled(false, UNIT_STATE_ROOT);
                 }
 
                 summon->AI()->AttackStart(me->GetVictim());
@@ -274,6 +275,9 @@ class boss_ignis : public CreatureScript
                             Talk(SAY_BERSERK);
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -375,7 +379,8 @@ class npc_scorch_ground : public CreatureScript
             npc_scorch_groundAI(Creature* creature) : ScriptedAI(creature)
             {
                 Initialize();
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE |UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PACIFIED);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PACIFIED);
+                me->SetControlled(true, UNIT_STATE_ROOT);
                 creature->SetDisplayId(16925); //model 2 in db cannot overwrite wdb fields
             }
 

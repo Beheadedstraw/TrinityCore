@@ -26,6 +26,7 @@ EndScriptData */
 /* ContentData
 npc_lady_sylvanas_windrunner
 npc_highborne_lamenter
+npc_parqual_fintallas
 EndContentData */
 
 #include "ScriptMgr.h"

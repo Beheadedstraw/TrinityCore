@@ -325,12 +325,9 @@ public:
     bool OnGossipHello(Player* player, GameObject* go) override
     {
         if (Creature* anchor = go->FindNearestCreature(29521, 15))
-        {
-            ObjectGuid prisonerGUID = anchor->AI()->GetGUID();
-            if (!prisonerGUID.IsEmpty())
+            if (ObjectGuid prisonerGUID = anchor->AI()->GetGUID())
                 if (Creature* prisoner = ObjectAccessor::GetCreature(*player, prisonerGUID))
                     ENSURE_AI(npc_unworthy_initiate::npc_unworthy_initiateAI, prisoner->AI())->EventStart(anchor, player);
-        }
 
         return false;
     }
@@ -479,10 +476,10 @@ public:
 
     bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
     {
-        player->PlayerTalkClass->ClearMenus();
+        ClearGossipMenuFor(player);
         if (action == GOSSIP_ACTION_INFO_DEF)
         {
-            player->CLOSE_GOSSIP_MENU();
+            CloseGossipMenuFor(player);
 
             if (player->IsInCombat() || creature->IsInCombat())
                 return true;
@@ -512,8 +509,8 @@ public:
             if (player->IsInCombat() || creature->IsInCombat())
                 return true;
 
-            player->ADD_GOSSIP_ITEM_DB(Player::GetDefaultGossipMenuForSource(creature), 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
-            player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+            AddGossipItemFor(player, Player::GetDefaultGossipMenuForSource(creature), 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
+            SendGossipMenuFor(player, player->GetGossipTextId(creature), creature->GetGUID());
         }
         return true;
     }
@@ -946,16 +943,20 @@ public:
 
         void FindMinions(Unit* owner)
         {
-            std::list<TempSummon*> MinionList;
+            std::list<Creature*> MinionList;
             owner->GetAllMinionsByEntry(MinionList, NPC_GHOULS);
 
             if (!MinionList.empty())
             {
-                for (TempSummon* summon : MinionList)
+                for (std::list<Creature*>::const_iterator itr = MinionList.begin(); itr != MinionList.end(); ++itr)
                 {
-                    if (summon->GetOwnerGUID() == me->GetOwnerGUID())
-                        if (summon->IsInCombat() && summon->getAttackerForHelper())
-                            AttackStart(summon->getAttackerForHelper());
+                    if ((*itr)->GetOwner()->GetGUID() == me->GetOwner()->GetGUID())
+                    {
+                        if ((*itr)->IsInCombat() && (*itr)->getAttackerForHelper())
+                        {
+                            AttackStart((*itr)->getAttackerForHelper());
+                        }
+                    }
                 }
             }
         }
@@ -1022,7 +1023,6 @@ class npc_scarlet_miner_cart : public CreatureScript
         {
             npc_scarlet_miner_cartAI(Creature* creature) : PassiveAI(creature)
             {
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                 me->SetDisplayId(me->GetCreatureTemplate()->Modelid1); // Modelid2 is a horse.
             }
 
@@ -1181,8 +1181,6 @@ class npc_scarlet_miner : public CreatureScript
                         if (Unit* car = ObjectAccessor::GetCreature(*me, carGUID))
                         {
                             me->SetFacingToObject(car);
-                            car->Relocate(car->GetPositionX(), car->GetPositionY(), me->GetPositionZ() + 1);
-                            car->StopMoving();
                             car->RemoveAura(SPELL_CART_DRAG);
                         }
                         Talk(SAY_SCARLET_MINER_1);

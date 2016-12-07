@@ -22,7 +22,7 @@
 
 uint32 const EncounterCount             = 8;
 
-enum SCDataTypes
+enum DataTypes
 {
     DATA_DOCTORTHEOLENKRASTINOV         = 0,
     DATA_INSTRUCTORMALICIA              = 1,
@@ -34,13 +34,13 @@ enum SCDataTypes
     DATA_KIRTONOS                       = 7
 };
 
-enum SCCreatureIds
+enum CreatureIds
 {
     NPC_DARKMASTER_GANDLING             = 1853,
     NPC_BONE_MINION                     = 16119
 };
 
-enum SCGameobjectIds
+enum GameobjectIds
 {
     GO_GATE_KIRTONOS                    = 175570,
     GO_GATE_GANDLING                    = 177374,

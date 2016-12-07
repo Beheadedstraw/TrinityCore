@@ -344,7 +344,9 @@ enum MiscData
     SOUND_PAIN                  = 17360,    // separate sound, not attached to any text
 
     EQUIP_ASHBRINGER_GLOWING    = 50442,
-    EQUIP_BROKEN_FROSTMOURNE    = 50840
+    EQUIP_BROKEN_FROSTMOURNE    = 50840,
+
+    MOVIE_FALL_OF_THE_LICH_KING = 16,
 };
 
 enum Misc
@@ -374,6 +376,25 @@ class NecroticPlagueTargetCheck : public std::unary_function<Unit*, bool>
         Unit const* _sourceObj;
         uint32 _notAura1;
         uint32 _notAura2;
+};
+
+class HeightDifferenceCheck
+{
+    public:
+        HeightDifferenceCheck(GameObject* go, float diff, bool reverse)
+            : _baseObject(go), _difference(diff), _reverse(reverse)
+        {
+        }
+
+        bool operator()(WorldObject* unit) const
+        {
+            return (unit->GetPositionZ() - _baseObject->GetPositionZ() > _difference) != _reverse;
+        }
+
+    private:
+        GameObject* _baseObject;
+        float _difference;
+        bool _reverse;
 };
 
 class FrozenThroneResetWorker
@@ -507,6 +528,7 @@ class boss_the_lich_king : public CreatureScript
             void SetupEncounter()
             {
                 _Reset();
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                 me->SetReactState(REACT_PASSIVE);
                 events.SetPhase(PHASE_INTRO);
                 Initialize();
@@ -812,7 +834,7 @@ class boss_the_lich_king : public CreatureScript
                         events.ScheduleEvent(EVENT_INTRO_TALK_1, 9000, 0, PHASE_INTRO);
                         break;
                     case POINT_CENTER_1:
-                        me->SetFacingTo(0.0f);
+                        me->SetFacingTo(0.0f, true);
                         Talk(SAY_LK_REMORSELESS_WINTER);
                         me->GetMap()->SetZoneMusic(AREA_THE_FROZEN_THRONE, MUSIC_SPECIAL);
                         DoCast(me, SPELL_REMORSELESS_WINTER_1);
@@ -827,7 +849,7 @@ class boss_the_lich_king : public CreatureScript
                         events.ScheduleEvent(EVENT_SOUL_REAPER, 94000, 0, PHASE_TWO);
                         break;
                     case POINT_CENTER_2:
-                        me->SetFacingTo(0.0f);
+                        me->SetFacingTo(0.0f, true);
                         Talk(SAY_LK_REMORSELESS_WINTER);
                         me->GetMap()->SetZoneMusic(AREA_THE_FROZEN_THRONE, MUSIC_SPECIAL);
                         DoCast(me, SPELL_REMORSELESS_WINTER_2);
@@ -1084,7 +1106,7 @@ class boss_the_lich_king : public CreatureScript
                             break;
                         case EVENT_OUTRO_SOUL_BARRAGE:
                             me->CastSpell((Unit*)NULL, SPELL_SOUL_BARRAGE, TRIGGERED_IGNORE_CAST_IN_PROGRESS);
-                            CreatureTextMgr::SendSound(me, SOUND_PAIN, CHAT_MSG_MONSTER_YELL);
+                            sCreatureTextMgr->SendSound(me, SOUND_PAIN, CHAT_MSG_MONSTER_YELL, 0, TEXT_RANGE_NORMAL, TEAM_OTHER, false);
                             // set flight
                             me->SetDisableGravity(true);
                             me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
@@ -1103,6 +1125,9 @@ class boss_the_lich_king : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING) && !(events.IsInPhase(PHASE_TRANSITION) || events.IsInPhase(PHASE_OUTRO) || events.IsInPhase(PHASE_FROSTMOURNE)))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -1484,7 +1509,7 @@ class npc_valkyr_shadowguard : public CreatureScript
                             {
                                 std::list<Creature*> triggers;
                                 GetCreatureListWithEntryInGrid(triggers, me, NPC_WORLD_TRIGGER, 150.0f);
-                                triggers.remove_if(Trinity::HeightDifferenceCheck(platform, 5.0f, true));
+                                triggers.remove_if(HeightDifferenceCheck(platform, 5.0f, true));
                                 if (triggers.empty())
                                     return;
 
@@ -2102,11 +2127,8 @@ class spell_the_lich_king_necrotic_plague_jump : public SpellScriptLoader
                 targets.resize(1);
             }
 
-            void CheckAura(SpellMissInfo missInfo)
+            void CheckAura()
             {
-                if (missInfo != SPELL_MISS_NONE)
-                    return;
-
                 if (GetHitUnit()->HasAura(GetSpellInfo()->Id))
                     _hadAura = true;
             }
@@ -2119,7 +2141,7 @@ class spell_the_lich_king_necrotic_plague_jump : public SpellScriptLoader
 
             void Register() override
             {
-                BeforeHit += BeforeSpellHitFn(spell_the_lich_king_necrotic_plague_SpellScript::CheckAura);
+                BeforeHit += SpellHitFn(spell_the_lich_king_necrotic_plague_SpellScript::CheckAura);
                 OnHit += SpellHitFn(spell_the_lich_king_necrotic_plague_SpellScript::AddMissingStack);
             }
 
@@ -2279,7 +2301,7 @@ class spell_the_lich_king_quake : public SpellScriptLoader
             void FilterTargets(std::list<WorldObject*>& targets)
             {
                 if (GameObject* platform = ObjectAccessor::GetGameObject(*GetCaster(), GetCaster()->GetInstanceScript()->GetGuidData(DATA_ARTHAS_PLATFORM)))
-                    targets.remove_if(Trinity::HeightDifferenceCheck(platform, 5.0f, false));
+                    targets.remove_if(HeightDifferenceCheck(platform, 5.0f, false));
             }
 
             void HandleSendEvent(SpellEffIndex /*effIndex*/)
@@ -2447,7 +2469,7 @@ class spell_the_lich_king_summon_into_air : public SpellScriptLoader
                 dest->RelocateOffset(offset);
                 GetHitDest()->RelocateOffset(offset);
                 // spirit bombs get higher
-                if (GetSpellInfo()->GetEffect(effIndex)->MiscValue == NPC_SPIRIT_BOMB)
+                if (GetSpellInfo()->Effects[effIndex].MiscValue == NPC_SPIRIT_BOMB)
                 {
                     dest->RelocateOffset(offset);
                     GetHitDest()->RelocateOffset(offset);
@@ -2651,7 +2673,7 @@ class spell_the_lich_king_vile_spirits : public SpellScriptLoader
             void OnPeriodic(AuraEffect const* aurEff)
             {
                 if (_is25Man || ((aurEff->GetTickNumber() - 1) % 5))
-                    GetTarget()->CastSpell((Unit*)NULL, aurEff->GetSpellEffectInfo()->TriggerSpell, true, NULL, aurEff, GetCasterGUID());
+                    GetTarget()->CastSpell((Unit*)NULL, GetSpellInfo()->Effects[aurEff->GetEffIndex()].TriggerSpell, true, NULL, aurEff, GetCasterGUID());
             }
 
             void Register() override
@@ -2929,11 +2951,8 @@ class spell_the_lich_king_restore_soul : public SpellScriptLoader
                 }
             }
 
-            void RemoveAura(SpellMissInfo missInfo)
+            void RemoveAura()
             {
-                if (missInfo != SPELL_MISS_NONE)
-                    return;
-
                 if (Unit* target = GetHitUnit())
                     target->RemoveAurasDueToSpell(target->GetMap()->IsHeroic() ? SPELL_HARVEST_SOULS_TELEPORT : SPELL_HARVEST_SOUL_TELEPORT);
             }
@@ -2941,7 +2960,7 @@ class spell_the_lich_king_restore_soul : public SpellScriptLoader
             void Register() override
             {
                 OnEffectHit += SpellEffectFn(spell_the_lich_king_restore_soul_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
-                BeforeHit += BeforeSpellHitFn(spell_the_lich_king_restore_soul_SpellScript::RemoveAura);
+                BeforeHit += SpellHitFn(spell_the_lich_king_restore_soul_SpellScript::RemoveAura);
             }
 
             InstanceScript* _instance;
@@ -2972,8 +2991,12 @@ class spell_the_lich_king_dark_hunger : public SpellScriptLoader
             void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
             {
                 PreventDefaultAction();
-                int32 heal = int32(eventInfo.GetDamageInfo()->GetDamage() / 2);
-                GetTarget()->CastCustomSpell(SPELL_DARK_HUNGER_HEAL, SPELLVALUE_BASE_POINT0, heal, GetTarget(), true, NULL, aurEff);
+                DamageInfo* damageInfo = eventInfo.GetDamageInfo();
+                if (!damageInfo || !damageInfo->GetDamage())
+                    return;
+
+                int32 heal = static_cast<int32>(damageInfo->GetDamage()) / 2;
+                GetTarget()->CastCustomSpell(SPELL_DARK_HUNGER_HEAL, SPELLVALUE_BASE_POINT0, heal, GetTarget(), true, nullptr, aurEff);
             }
 
             void Register() override
@@ -3135,6 +3158,41 @@ class spell_the_lich_king_jump_remove_aura : public SpellScriptLoader
         }
 };
 
+class spell_the_lich_king_play_movie : public SpellScriptLoader
+{
+    public:
+        spell_the_lich_king_play_movie() : SpellScriptLoader("spell_the_lich_king_play_movie") { }
+
+        class spell_the_lich_king_play_movie_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_the_lich_king_play_movie_SpellScript);
+
+            bool Validate(SpellInfo const* /*spell*/) override
+            {
+                if (!sMovieStore.LookupEntry(MOVIE_FALL_OF_THE_LICH_KING))
+                    return false;
+                return true;
+            }
+
+            void HandleScript(SpellEffIndex effIndex)
+            {
+                PreventHitDefaultEffect(effIndex);
+                if (Player* player = GetHitPlayer())
+                    player->SendMovieStart(MOVIE_FALL_OF_THE_LICH_KING);
+            }
+
+            void Register() override
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_the_lich_king_play_movie_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+            }
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_the_lich_king_play_movie_SpellScript();
+        }
+};
+
 class achievement_been_waiting_long_time : public AchievementCriteriaScript
 {
     public:
@@ -3204,6 +3262,7 @@ void AddSC_boss_the_lich_king()
     new spell_the_lich_king_jump();
     new spell_the_lich_king_jump_remove_aura();
     new spell_trigger_spell_from_caster("spell_the_lich_king_mass_resurrection", SPELL_MASS_RESURRECTION_REAL);
+    new spell_the_lich_king_play_movie();
     new achievement_been_waiting_long_time();
     new achievement_neck_deep_in_vile();
 }

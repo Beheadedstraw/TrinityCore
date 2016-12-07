@@ -18,7 +18,7 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "InstanceScript.h"
-#include "WorldStatePackets.h"
+#include "WorldPacket.h"
 #include "violet_hold.h"
 #include "Player.h"
 
@@ -286,11 +286,11 @@ class instance_violet_hold : public InstanceMapScript
                 }
             }
 
-            void FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& data) override
+            void FillInitialWorldStates(WorldPacket& data) override
             {
-                data.Worldstates.emplace_back(uint32(WORLD_STATE_VH_SHOW), uint32(EventState == IN_PROGRESS ? 1 : 0));
-                data.Worldstates.emplace_back(uint32(WORLD_STATE_VH_PRISON_STATE), uint32(DoorIntegrity));
-                data.Worldstates.emplace_back(uint32(WORLD_STATE_VH_WAVE_COUNT), uint32(WaveCount));
+                data << uint32(WORLD_STATE_VH_SHOW) << uint32(EventState == IN_PROGRESS ? 1 : 0);
+                data << uint32(WORLD_STATE_VH_PRISON_STATE) << uint32(DoorIntegrity);
+                data << uint32(WORLD_STATE_VH_WAVE_COUNT) << uint32(WaveCount);
             }
 
             bool CheckRequiredBosses(uint32 bossId, Player const* player = nullptr) const override

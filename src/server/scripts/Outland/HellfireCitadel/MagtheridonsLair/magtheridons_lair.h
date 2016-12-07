@@ -21,7 +21,7 @@
 
 #define DataHeader "ML"
 
-enum MLDataTypes
+enum DataTypes
 {
     DATA_MAGTHERIDON_EVENT         = 1,
     DATA_MAGTHERIDON               = 3,

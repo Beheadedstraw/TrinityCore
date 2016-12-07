@@ -198,6 +198,9 @@ class boss_prince_taldaram : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -247,7 +250,7 @@ class boss_prince_taldaram : public CreatureScript
 
             Unit* GetEmbraceTarget()
             {
-                if (!_embraceTargetGUID.IsEmpty())
+                if (_embraceTargetGUID)
                     return ObjectAccessor::GetUnit(*me, _embraceTargetGUID);
 
                 return NULL;

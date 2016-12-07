@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 12;
 
-enum KZDataTypes
+enum DataTypes
 {
     DATA_ATTUMEN                    = 0,
     DATA_MOROES                     = 1,
@@ -56,20 +56,23 @@ enum KZDataTypes
     DATA_GO_SIDE_ENTRANCE_DOOR      = 29
 };
 
-enum KZOperaEvents
+enum OperaEvents
 {
     EVENT_OZ                        = 1,
     EVENT_HOOD                      = 2,
     EVENT_RAJ                       = 3
 };
 
-enum KZMiscCreatures
+enum MiscCreatures
 {
     NPC_HYAKISS_THE_LURKER          = 16179,
     NPC_ROKAD_THE_RAVAGER           = 16181,
     NPC_SHADIKITH_THE_GLIDER        = 16180,
     NPC_TERESTIAN_ILLHOOF           = 15688,
     NPC_MOROES                      = 15687,
+    NPC_ATTUMEN_UNMOUNTED           = 15550,
+    NPC_ATTUMEN_MOUNTED             = 16152,
+    NPC_MIDNIGHT                    = 16151,
 
     // Trash
     NPC_COLDMIST_WIDOW              = 16171,
@@ -83,7 +86,7 @@ enum KZMiscCreatures
     NPC_KILREK                      = 17229
 };
 
-enum KZGameObjectIds
+enum GameObjectIds
 {
     GO_STAGE_CURTAIN                = 183932,
     GO_STAGE_DOOR_LEFT              = 184278,
@@ -99,7 +102,7 @@ enum KZGameObjectIds
     GO_DUST_COVERED_CHEST           = 185119
 };
 
-enum KZMisc
+enum Misc
 {
     OPTIONAL_BOSS_REQUIRED_DEATH_COUNT = 50
 };

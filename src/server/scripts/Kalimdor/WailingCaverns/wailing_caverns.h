@@ -21,7 +21,7 @@
 
 #define DataHeader "WC"
 
-enum WCDataTypes
+enum DataTypes
 {
     TYPE_LORD_COBRAHN         = 1,
     TYPE_LORD_PYTHAS          = 2,

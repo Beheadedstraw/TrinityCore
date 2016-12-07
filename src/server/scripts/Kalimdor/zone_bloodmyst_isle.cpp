@@ -41,7 +41,7 @@ EndContentData */
 ######*/
 
 //possible creatures to be spawned
-uint32 const possibleSpawns[32] = {17322, 17661, 17496, 17522, 17340, 17352, 17333, 17524, 17654, 17348, 17339, 17345, 17359, 17353, 17336, 17550, 17330, 17701, 17321, 17680, 17325, 17320, 17683, 17342, 17715, 17334, 17341, 17338, 17337, 17346, 17344, 17327};
+uint32 const possibleSpawns[31] = {17322, 17661, 17496, 17522, 17340, 17352, 17333, 17524, 17654, 17348, 17339, 17345, 17359, 17353, 17336, 17550, 17330, 17701, 17321, 17325, 17320, 17683, 17342, 17715, 17334, 17341, 17338, 17337, 17346, 17344, 17327};
 
 enum WebbedCreature
 {
@@ -74,6 +74,7 @@ public:
                 case 0:
                     if (Player* player = killer->ToPlayer())
                         player->KilledMonsterCredit(NPC_EXPEDITION_RESEARCHER);
+                    spawnCreatureID = NPC_EXPEDITION_RESEARCHER;
                     break;
                 case 1:
                 case 2:
@@ -81,8 +82,7 @@ public:
                     break;
             }
 
-            if (spawnCreatureID)
-                me->SummonCreature(spawnCreatureID, 0.0f, 0.0f, 0.0f, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 60000);
+            me->SummonCreature(spawnCreatureID, 0.0f, 0.0f, 0.0f, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 60000);
         }
     };
 
@@ -267,7 +267,7 @@ public:
 
                 if (killer->GetGUID() == legoso->GetGUID() ||
                     (group && group->IsMember(killer->GetGUID())) ||
-                    killer->GetGUID() == legoso->AI()->GetGUID(DATA_EVENT_STARTER_GUID))
+                    killer->GetGUID().GetCounter() == legoso->AI()->GetData(DATA_EVENT_STARTER_GUID))
                     legoso->AI()->DoAction(ACTION_LEGOSO_SIRONAS_KILLED);
             }
         }
@@ -311,10 +311,13 @@ public:
                 {
                     DoCast(me, SPELL_SIRONAS_CHANNELING);
                     std::list<Creature*> BeamList;
+                    _beamGuidList.clear();
                     me->GetCreatureListWithEntryInGrid(BeamList, NPC_BLOODMYST_TESLA_COIL, SIZE_OF_GRIDS);
-                    if (!BeamList.empty())
-                        for (std::list<Creature*>::iterator itr = BeamList.begin(); itr != BeamList.end(); ++itr)
-                            (*itr)->CastSpell(*itr, SPELL_BLOODMYST_TESLA);
+                    for (std::list<Creature*>::iterator itr = BeamList.begin(); itr != BeamList.end(); ++itr)
+                    {
+                        _beamGuidList.push_back((*itr)->GetGUID());
+                        (*itr)->CastSpell(*itr, SPELL_BLOODMYST_TESLA);
+                    }
                     break;
                 }
                 case ACTION_SIRONAS_CHANNEL_STOP:
@@ -332,6 +335,7 @@ public:
         }
 
     private:
+        GuidList _beamGuidList;
         EventMap _events;
     };
 
@@ -357,45 +361,50 @@ public:
             Initialize();
         }
 
-        void Initialize()
-        {
-            _phase = PHASE_NONE;
-            _moveTimer = 0;
-        }
-
         void sQuestAccept(Player* player, Quest const* quest) override
         {
             if (quest->GetQuestId() == QUEST_ENDING_THEIR_WORLD)
             {
-                SetGUID(player->GetGUID(), DATA_EVENT_STARTER_GUID);
+                SetData(DATA_EVENT_STARTER_GUID, player->GetGUID().GetCounter());
                 Start(true, true, player->GetGUID(), quest);
             }
         }
 
-        ObjectGuid GetGUID(int32 type) const override
+        uint32 GetData(uint32 id) const override
         {
-            if (type == DATA_EVENT_STARTER_GUID)
-                return _eventStarterGuid;
-
-            return ObjectGuid::Empty;
-        }
-
-        void SetGUID(ObjectGuid guid, int32 type) override
-        {
-            switch (type)
+            switch (id)
             {
                 case DATA_EVENT_STARTER_GUID:
-                    _eventStarterGuid = guid;
+                    return _eventStarterGuidLow;
+                default:
+                    return 0;
+            }
+        }
+
+        void SetData(uint32 data, uint32 value) override
+        {
+            switch (data)
+            {
+                case DATA_EVENT_STARTER_GUID:
+                    _eventStarterGuidLow = value;
                     break;
                 default:
                     break;
             }
         }
 
+        void Initialize()
+        {
+            _phase = PHASE_NONE;
+            _moveTimer = 0;
+            _eventStarterGuidLow = 0;
+        }
+
         void Reset() override
         {
-            me->SetCanDualWield(true);
             Initialize();
+            me->SetCanDualWield(true);
+
             _events.Reset();
             _events.ScheduleEvent(EVENT_FROST_SHOCK, 1 * IN_MILLISECONDS);
             _events.ScheduleEvent(EVENT_HEALING_SURGE, 5 * IN_MILLISECONDS);
@@ -499,7 +508,7 @@ public:
                             _explosivesGuids.clear();
                             for (uint8 i = 0; i != MAX_EXPLOSIVES; ++i)
                             {
-                                if (GameObject* explosive = me->SummonGameObject(GO_DRAENEI_EXPLOSIVES_1, ExplosivesPos[0][i].m_positionX, ExplosivesPos[0][i].m_positionY, ExplosivesPos[0][i].m_positionZ, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0))
+                                if (GameObject* explosive = me->SummonGameObject(GO_DRAENEI_EXPLOSIVES_1, ExplosivesPos[0][i], G3D::Quat(), 0))
                                     _explosivesGuids.push_back(explosive->GetGUID());
                             }
                             me->HandleEmoteCommand(EMOTE_ONESHOT_NONE); // reset anim state
@@ -595,7 +604,7 @@ public:
                             _explosivesGuids.clear();
                             for (uint8 i = 0; i != MAX_EXPLOSIVES; ++i)
                             {
-                                if (GameObject* explosive = me->SummonGameObject(GO_DRAENEI_EXPLOSIVES_2, ExplosivesPos[1][i].m_positionX, ExplosivesPos[1][i].m_positionY, ExplosivesPos[1][i].m_positionZ, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0))
+                                if (GameObject* explosive = me->SummonGameObject(GO_DRAENEI_EXPLOSIVES_2, ExplosivesPos[1][i], G3D::Quat(), 0))
                                     _explosivesGuids.push_back(explosive->GetGUID());
                             }
                             Talk(SAY_LEGOSO_15);
@@ -794,7 +803,7 @@ public:
     private:
         int8 _phase;
         uint32 _moveTimer;
-        ObjectGuid _eventStarterGuid;
+        ObjectGuid::LowType _eventStarterGuidLow;
         GuidList _explosivesGuids;
         EventMap _events;
     };

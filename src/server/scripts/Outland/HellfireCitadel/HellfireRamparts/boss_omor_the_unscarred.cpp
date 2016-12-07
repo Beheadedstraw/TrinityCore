@@ -168,7 +168,7 @@ class boss_omor_the_unscarred : public CreatureScript
                             OrbitalStrike_Timer = 14000 + rand32() % 2000;
                             PlayerGUID = temp->GetGUID();
 
-                            if (!PlayerGUID.IsEmpty())
+                            if (PlayerGUID)
                                 CanPullBack = true;
                         }
                     }

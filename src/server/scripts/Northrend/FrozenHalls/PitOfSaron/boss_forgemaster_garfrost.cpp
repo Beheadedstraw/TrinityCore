@@ -232,6 +232,9 @@ class boss_garfrost : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -263,11 +266,8 @@ class spell_garfrost_permafrost : public SpellScriptLoader
             }
 
         private:
-            void PreventHitByLoS(SpellMissInfo missInfo)
+            void PreventHitByLoS()
             {
-                if (missInfo != SPELL_MISS_NONE)
-                    return;
-
                 if (Unit* target = GetHitUnit())
                 {
                     Unit* caster = GetCaster();
@@ -308,7 +308,7 @@ class spell_garfrost_permafrost : public SpellScriptLoader
 
             void Register() override
             {
-                BeforeHit += BeforeSpellHitFn(spell_garfrost_permafrost_SpellScript::PreventHitByLoS);
+                BeforeHit += SpellHitFn(spell_garfrost_permafrost_SpellScript::PreventHitByLoS);
                 AfterHit += SpellHitFn(spell_garfrost_permafrost_SpellScript::RestoreImmunity);
             }
 

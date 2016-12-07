@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 10;
 
-enum SMDataTypes
+enum DataTypes
 {
     DATA_MOGRAINE_AND_WHITE_EVENT   = 1,
     DATA_MOGRAINE                   = 2,
@@ -43,7 +43,7 @@ enum SMDataTypes
     DATA_SCORN                      = 14
 };
 
-enum SMCreatureIds
+enum CreatureIds
 {
     NPC_MOGRAINE                    = 3976,
     NPC_WHITEMANE                   = 3977,
@@ -54,7 +54,7 @@ enum SMCreatureIds
     NPC_PUMPKIN                     = 23694
 };
 
-enum SMGameObjectIds
+enum GameObjectIds
 {
     GO_HIGH_INQUISITORS_DOOR        = 104600,
     GO_PUMPKIN_SHRINE               = 186267

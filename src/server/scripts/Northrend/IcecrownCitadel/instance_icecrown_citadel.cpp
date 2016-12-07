@@ -164,13 +164,13 @@ class instance_icecrown_citadel : public InstanceMapScript
                 }
             }
 
-            void FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet) override
+            void FillInitialWorldStates(WorldPacket& data) override
             {
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_SHOW_TIMER), int32(BloodQuickeningState == IN_PROGRESS));
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_EXECUTION_TIME), int32(BloodQuickeningMinutes));
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_SHOW_ATTEMPTS), int32(instance->IsHeroic()));
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_ATTEMPTS_REMAINING), int32(HeroicAttempts));
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_ATTEMPTS_MAX), int32(MaxHeroicAttempts));
+                data << uint32(WORLDSTATE_SHOW_TIMER)         << uint32(BloodQuickeningState == IN_PROGRESS);
+                data << uint32(WORLDSTATE_EXECUTION_TIME)     << uint32(BloodQuickeningMinutes);
+                data << uint32(WORLDSTATE_SHOW_ATTEMPTS)      << uint32(instance->IsHeroic());
+                data << uint32(WORLDSTATE_ATTEMPTS_REMAINING) << uint32(HeroicAttempts);
+                data << uint32(WORLDSTATE_ATTEMPTS_MAX)       << uint32(MaxHeroicAttempts);
             }
 
             void OnPlayerEnter(Player* player) override
@@ -263,6 +263,14 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     case NPC_PROFESSOR_PUTRICIDE:
                         ProfessorPutricideGUID = creature->GetGUID();
+                        break;
+                    case NPC_VOLATILE_OOZE:
+                    case NPC_GAS_CLOUD:
+                        //! These creatures are summoned by something else than Professor Putricide
+                        //! but need to be controlled/despawned by him - so they need to be
+                        //! registered on his summon list
+                        if (Creature* professorPutricide = instance->GetCreature(ProfessorPutricideGUID))
+                            professorPutricide->AI()->JustSummoned(creature);
                         break;
                     case NPC_PRINCE_KELESETH:
                         BloodCouncilGUIDs[0] = creature->GetGUID();
@@ -384,8 +392,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     case NPC_ZAFOD_BOOMBOX:
                         if (GameObjectTemplate const* go = sObjectMgr->GetGameObjectTemplate(GO_THE_SKYBREAKER_A))
-                            if ((TeamInInstance == ALLIANCE && data->mapid == go->moTransport.SpawnMap) ||
-                                (TeamInInstance == HORDE && data->mapid != go->moTransport.SpawnMap))
+                            if ((TeamInInstance == ALLIANCE && data->mapid == go->moTransport.mapID) ||
+                                (TeamInInstance == HORDE && data->mapid != go->moTransport.mapID))
                                 return entry;
                         return 0;
                     case NPC_IGB_MURADIN_BRONZEBEARD:
@@ -400,7 +408,7 @@ class instance_icecrown_citadel : public InstanceMapScript
                 return entry;
             }
 
-            uint32 GetGameObjectEntry(ObjectGuid::LowType /*spawnId*/, uint32 entry) override
+            uint32 GetGameObjectEntry(ObjectGuid::LowType /*guidLow*/, uint32 entry) override
             {
                 switch (entry)
                 {
@@ -518,7 +526,10 @@ class instance_icecrown_citadel : public InstanceMapScript
                     case GO_LADY_DEATHWHISPER_ELEVATOR:
                         LadyDeathwisperElevatorGUID = go->GetGUID();
                         if (GetBossState(DATA_LADY_DEATHWHISPER) == DONE)
-                            go->SetTransportState(GO_STATE_TRANSPORT_ACTIVE);
+                        {
+                            go->SetUInt32Value(GAMEOBJECT_LEVEL, 0);
+                            go->SetGoState(GO_STATE_READY);
+                        }
                         break;
                     case GO_THE_SKYBREAKER_H:
                     case GO_ORGRIMS_HAMMER_A:
@@ -628,13 +639,17 @@ class instance_icecrown_citadel : public InstanceMapScript
                     case GO_CACHE_OF_THE_DREAMWALKER_10H:
                     case GO_CACHE_OF_THE_DREAMWALKER_25H:
                         if (Creature* valithria = instance->GetCreature(ValithriaDreamwalkerGUID))
-                            go->SetLootRecipient(valithria->GetLootRecipient());
+                            go->SetLootRecipient(valithria->GetLootRecipient(), valithria->GetLootRecipientGroup());
                         go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED | GO_FLAG_NOT_SELECTABLE | GO_FLAG_NODESPAWN);
                         break;
                     case GO_ARTHAS_PLATFORM:
+                        // this enables movement at The Frozen Throne, when printed this value is 0.000000f
+                        // however, when represented as integer client will accept only this value
+                        go->SetUInt32Value(GAMEOBJECT_PARENTROTATION, 5535469);
                         ArthasPlatformGUID = go->GetGUID();
                         break;
                     case GO_ARTHAS_PRECIPICE:
+                        go->SetUInt32Value(GAMEOBJECT_PARENTROTATION, 4178312);
                         ArthasPrecipiceGUID = go->GetGUID();
                         break;
                     case GO_DOODAD_ICECROWN_THRONEFROSTYEDGE01:
@@ -831,7 +846,10 @@ class instance_icecrown_citadel : public InstanceMapScript
                                 SetTeleporterState(teleporter, true);
 
                             if (GameObject* elevator = instance->GetGameObject(LadyDeathwisperElevatorGUID))
-                                elevator->SetTransportState(GO_STATE_TRANSPORT_ACTIVE);
+                            {
+                                elevator->SetUInt32Value(GAMEOBJECT_LEVEL, 0);
+                                elevator->SetGoState(GO_STATE_READY);
+                            }
 
                             SpawnGunship();
                         }
@@ -857,7 +875,7 @@ class instance_icecrown_citadel : public InstanceMapScript
                                 if (GameObject* loot = instance->GetGameObject(DeathbringersCacheGUID))
                                 {
                                     if (Creature* deathbringer = instance->GetCreature(DeathbringerSaurfangGUID))
-                                        loot->SetLootRecipient(deathbringer->GetLootRecipient());
+                                        loot->SetLootRecipient(deathbringer->GetLootRecipient(), deathbringer->GetLootRecipientGroup());
                                     loot->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED | GO_FLAG_NOT_SELECTABLE | GO_FLAG_NODESPAWN);
                                 }
 
@@ -1023,7 +1041,7 @@ class instance_icecrown_citadel : public InstanceMapScript
                 {
                     SetBossState(DATA_ICECROWN_GUNSHIP_BATTLE, NOT_STARTED);
                     uint32 gunshipEntry = TeamInInstance == HORDE ? GO_ORGRIMS_HAMMER_H : GO_THE_SKYBREAKER_A;
-                    if (Transport* gunship = sTransportMgr->CreateTransport(gunshipEntry, UI64LIT(0), instance))
+                    if (Transport* gunship = sTransportMgr->CreateTransport(gunshipEntry, 0, instance))
                         GunshipGUID = gunship->GetGUID();
                 }
             }
@@ -1043,6 +1061,15 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     case DATA_ORB_WHISPERER_ACHIEVEMENT:
                         IsOrbWhispererEligible = data ? true : false;
+                        break;
+                    case DATA_SINDRAGOSA_FROSTWYRMS:
+                        FrostwyrmGUIDs.insert(data);
+                        break;
+                    case DATA_SPINESTALKER:
+                        SpinestalkerTrash.insert(data);
+                        break;
+                    case DATA_RIMEFANG:
+                        RimefangTrash.insert(data);
                         break;
                     case DATA_COLDFLAME_JETS:
                         ColdflameJetsState = data;
@@ -1090,22 +1117,6 @@ class instance_icecrown_citadel : public InstanceMapScript
                         }
                         break;
                     default:
-                        break;
-                }
-            }
-
-            void SetGuidData(uint32 type, ObjectGuid guid) override
-            {
-                switch (type)
-                {
-                    case DATA_SINDRAGOSA_FROSTWYRMS:
-                        FrostwyrmGUIDs.insert(guid.GetCounter());
-                        break;
-                    case DATA_SPINESTALKER:
-                        SpinestalkerTrash.insert(guid.GetCounter());
-                        break;
-                    case DATA_RIMEFANG:
-                        RimefangTrash.insert(guid.GetCounter());
                         break;
                 }
             }
@@ -1513,9 +1524,9 @@ class instance_icecrown_citadel : public InstanceMapScript
             uint32 TeamInInstance;
             uint32 ColdflameJetsState;
             uint32 UpperSpireTeleporterActiveState;
-            std::set<ObjectGuid::LowType> FrostwyrmGUIDs;
-            std::set<ObjectGuid::LowType> SpinestalkerTrash;
-            std::set<ObjectGuid::LowType> RimefangTrash;
+            std::set<uint32> FrostwyrmGUIDs;
+            std::set<uint32> SpinestalkerTrash;
+            std::set<uint32> RimefangTrash;
             uint32 BloodQuickeningState;
             uint32 HeroicAttempts;
             uint16 BloodQuickeningMinutes;

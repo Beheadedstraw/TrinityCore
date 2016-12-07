@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 5;
 
-enum RFDDataTypes
+enum DataTypes
 {
     // Main Bosses
     DATA_TUTEN_KASH                        = 0,
@@ -36,7 +36,7 @@ enum RFDDataTypes
     DATA_EXTINGUISHING_THE_IDOL            = 6
 };
 
-enum RFDCreatureIds
+enum CreatureIds
 {
     // Used in Tuten Kash summon event
     NPC_TOMB_FIEND                         = 7349,
@@ -50,7 +50,7 @@ enum RFDCreatureIds
     NPC_PLAGUEMAW_THE_ROTTING              = 7356
 };
 
-enum RFDGameObjectIds
+enum GameObjectIds
 {
     // Used for Tuten Kash summon event
     GO_GONG                                = 148917,

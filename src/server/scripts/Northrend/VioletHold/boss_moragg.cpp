@@ -26,9 +26,7 @@ enum Spells
     SPELL_CORROSIVE_SALIVA                     = 54527,
     SPELL_OPTIC_LINK                           = 54396,
     SPELL_RAY_OF_PAIN                          = 54438,
-    SPELL_RAY_OF_PAIN_H                        = 59523,
     SPELL_RAY_OF_SUFFERING                     = 54442,
-    SPELL_RAY_OF_SUFFERING_H                   = 59524,
 
     // Visual
     SPELL_OPTIC_LINK_LEVEL_1                   = 54393,
@@ -79,8 +77,8 @@ class boss_moragg : public CreatureScript
             {
                 scheduler.Async([this]
                 {
-                    DoCast(me, DUNGEON_MODE(SPELL_RAY_OF_PAIN, SPELL_RAY_OF_PAIN_H));
-                    DoCast(me, DUNGEON_MODE(SPELL_RAY_OF_SUFFERING, SPELL_RAY_OF_SUFFERING_H));
+                    DoCast(me, SPELL_RAY_OF_PAIN);
+                    DoCast(me, SPELL_RAY_OF_SUFFERING);
                 });
 
                 scheduler.Schedule(Seconds(15), [this](TaskContext task)
@@ -122,7 +120,7 @@ class spell_moragg_ray : public SpellScriptLoader
 
                 if (Unit* target = GetTarget()->GetAI()->SelectTarget(SELECT_TARGET_RANDOM, 0, 45.0f, true))
                 {
-                    uint32 triggerSpell = aurEff->GetSpellEffectInfo()->TriggerSpell;
+                    uint32 triggerSpell = GetSpellInfo()->Effects[aurEff->GetEffIndex()].TriggerSpell;
                     GetTarget()->CastSpell(target, triggerSpell, TRIGGERED_FULL_MASK, nullptr, aurEff);
                 }
             }

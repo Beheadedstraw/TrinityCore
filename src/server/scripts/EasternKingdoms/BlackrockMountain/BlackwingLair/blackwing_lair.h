@@ -39,7 +39,7 @@ enum BWLEncounter
     DATA_LORD_VICTOR_NEFARIUS   = 8
 };
 
-enum BWLCreatureIds
+enum CreatureIds
 {
     NPC_RAZORGORE               = 12435,
     NPC_BLACKWING_DRAGON        = 12422,
@@ -56,7 +56,7 @@ enum BWLCreatureIds
     NPC_NEFARIAN                = 11583
 };
 
-enum BWLGameObjectIds
+enum GameObjectIds
 {
     GO_BLACK_DRAGON_EGG         = 177807,
     GO_PORTCULLIS               = 176965,

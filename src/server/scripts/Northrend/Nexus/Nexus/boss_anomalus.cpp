@@ -145,7 +145,7 @@ class boss_anomalus : public CreatureScript
 
                 if (me->HasAura(SPELL_RIFT_SHIELD))
                 {
-                    if (!uiChaoticRiftGUID.IsEmpty())
+                    if (uiChaoticRiftGUID)
                     {
                         Creature* Rift = ObjectAccessor::GetCreature(*me, uiChaoticRiftGUID);
                         if (Rift && Rift->isDead())

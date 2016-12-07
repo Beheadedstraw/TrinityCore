@@ -72,11 +72,11 @@ public:
         uint32 channelId = 0;
         for (uint32 i = 0; i < sChatChannelsStore.GetNumRows(); ++i)
         {
-            ChatChannelsEntry const* channelEntry = sChatChannelsStore.LookupEntry(i);
-            if (!channelEntry)
+            ChatChannelsEntry const* entry = sChatChannelsStore.LookupEntry(i);
+            if (!entry)
                 continue;
 
-            if (strstr(channelEntry->Name->Str[handler->GetSessionDbcLocale()], channelStr))
+            if (strstr(entry->pattern[handler->GetSessionDbcLocale()], channelStr))
             {
                 channelId = i;
                 break;
@@ -90,7 +90,7 @@ public:
             if (!entry)
                 continue;
 
-            if (strstr(entry->AreaName->Str[handler->GetSessionDbcLocale()], channelStr))
+            if (strstr(entry->area_name[handler->GetSessionDbcLocale()], channelStr))
             {
                 zoneEntry = entry;
                 break;
@@ -100,14 +100,13 @@ public:
         Player* player = handler->GetSession()->GetPlayer();
         Channel* channel = nullptr;
 
-        if (ChannelMgr* cMgr = ChannelMgr::ForTeam(player->GetTeam()))
+        if (ChannelMgr* cMgr = ChannelMgr::forTeam(player->GetTeam()))
             channel = cMgr->GetChannel(channelId, channelStr, player, false, zoneEntry);
 
         if (strcmp(argStr, "on") == 0)
         {
             if (channel)
                 channel->SetOwnership(true);
-
             PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHANNEL_OWNERSHIP);
             stmt->setUInt8 (0, 1);
             stmt->setString(1, channelStr);
@@ -118,7 +117,6 @@ public:
         {
             if (channel)
                 channel->SetOwnership(false);
-
             PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHANNEL_OWNERSHIP);
             stmt->setUInt8 (0, 0);
             stmt->setString(1, channelStr);
@@ -162,9 +160,9 @@ public:
         if (!*args)
             return false;
 
-        std::string str = handler->PGetParseString(LANG_SYSTEMMESSAGE, args);
-
-        sWorld->SendServerMessage(SERVER_MSG_STRING, str);
+        char buff[2048];
+        sprintf(buff, handler->GetTrinityString(LANG_SYSTEMMESSAGE), args);
+        sWorld->SendServerMessage(SERVER_MSG_STRING, buff);
         return true;
     }
     // announce to logged in GMs
@@ -185,7 +183,9 @@ public:
         std::string str = handler->GetTrinityString(LANG_GLOBAL_NOTIFY);
         str += args;
 
-        sWorld->SendGlobalMessage(WorldPackets::Chat::PrintNotification(str).Write());
+        WorldPacket data(SMSG_NOTIFICATION, (str.size()+1));
+        data << str;
+        sWorld->SendGlobalMessage(&data);
 
         return true;
     }
@@ -198,7 +198,9 @@ public:
         std::string str = handler->GetTrinityString(LANG_GM_NOTIFY);
         str += args;
 
-        sWorld->SendGlobalGMMessage(WorldPackets::Chat::PrintNotification(str).Write());
+        WorldPacket data(SMSG_NOTIFICATION, (str.size()+1));
+        data << str;
+        sWorld->SendGlobalGMMessage(&data);
 
         return true;
     }

@@ -18,6 +18,7 @@
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "ScriptedEscortAI.h"
 #include "SpellScript.h"
 #include "PassiveAI.h"
 #include "GameObjectAI.h"
@@ -437,7 +438,7 @@ class boss_algalon_the_observer : public CreatureScript
                     me->SetDisableGravity(false);
                 else if (pointId == POINT_ALGALON_OUTRO)
                 {
-                    me->SetFacingTo(1.605703f);
+                    me->SetFacingTo(1.605703f, true);
                     events.ScheduleEvent(EVENT_OUTRO_3, 1200);
                     events.ScheduleEvent(EVENT_OUTRO_4, 2400);
                     events.ScheduleEvent(EVENT_OUTRO_5, 8500);
@@ -693,6 +694,9 @@ class boss_algalon_the_observer : public CreatureScript
                             me->DespawnOrUnsummon(1500);
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING) && !events.IsInPhase(PHASE_ROLE_PLAY))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -773,7 +777,7 @@ class npc_living_constellation : public CreatureScript
 
                 me->DespawnOrUnsummon(1);
                 if (InstanceScript* instance = me->GetInstanceScript())
-                    instance->DoStartCriteriaTimer(CRITERIA_TIMED_TYPE_EVENT, EVENT_ID_SUPERMASSIVE_START);
+                    instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, EVENT_ID_SUPERMASSIVE_START);
                 caster->CastSpell((Unit*)NULL, SPELL_BLACK_HOLE_CREDIT, TRIGGERED_FULL_MASK);
                 caster->ToCreature()->DespawnOrUnsummon(1);
             }
@@ -866,11 +870,15 @@ class npc_brann_bronzebeard_algalon : public CreatureScript
     public:
         npc_brann_bronzebeard_algalon() : CreatureScript("npc_brann_bronzebeard_algalon") { }
 
-        struct npc_brann_bronzebeard_algalonAI : public CreatureAI
+        struct npc_brann_bronzebeard_algalonAI : public npc_escortAI
         {
-            npc_brann_bronzebeard_algalonAI(Creature* creature) : CreatureAI(creature)
+            npc_brann_bronzebeard_algalonAI(Creature* creature) : npc_escortAI(creature)
             {
-                _currentPoint = 0;
+                SetDespawnAtEnd(false);
+                SetDespawnAtFar(false);
+
+                for (uint8 i = 0; i < MAX_BRANN_WAYPOINTS_INTRO; ++i)
+                    AddWaypoint(i, BrannIntroWaypoint[i].GetPositionX(), BrannIntroWaypoint[i].GetPositionY(), BrannIntroWaypoint[i].GetPositionZ());
             }
 
             void DoAction(int32 action) override
@@ -878,14 +886,12 @@ class npc_brann_bronzebeard_algalon : public CreatureScript
                 switch (action)
                 {
                     case ACTION_START_INTRO:
-                        _currentPoint = 0;
                         _events.Reset();
-                        me->SetWalk(false);
-                        _events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, 1);
+                        Start(false, true);
                         break;
                     case ACTION_FINISH_INTRO:
                         Talk(SAY_BRANN_ALGALON_INTRO_2);
-                        _events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, 1);
+                        SetEscortPaused(false);
                         break;
                     case ACTION_OUTRO:
                         me->GetMotionMaster()->MovePoint(POINT_BRANN_OUTRO, BrannOutroPos[1]);
@@ -895,38 +901,27 @@ class npc_brann_bronzebeard_algalon : public CreatureScript
                 }
             }
 
-            void MovementInform(uint32 movementType, uint32 pointId) override
+            void WaypointReached(uint32 pointId) override
             {
-                if (movementType != POINT_MOTION_TYPE)
-                    return;
-
-                uint32 delay = 1;
-                _currentPoint = pointId + 1;
                 switch (pointId)
                 {
                     case 2:
-                        delay = 8000;
-                        me->SetWalk(true);
+                        SetEscortPaused(true);
+                        _events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, 8000);
+                        SetRun(false);
                         break;
                     case 5:
-                        me->SetWalk(false);
+                        SetRun(true);
+                        SetEscortPaused(true);
                         Talk(SAY_BRANN_ALGALON_INTRO_1);
                         _events.ScheduleEvent(EVENT_SUMMON_ALGALON, 7500);
-                        return;
-                    case 9:
-                        me->DespawnOrUnsummon(1);
-                        return;
-                    case POINT_BRANN_OUTRO:
-                    case POINT_BRANN_OUTRO_END:
-                        return;
+                        break;
                 }
-
-                _events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, delay);
             }
 
             void UpdateAI(uint32 diff) override
             {
-                UpdateVictim();
+                npc_escortAI::UpdateAI(diff);
 
                 if (_events.Empty())
                     return;
@@ -938,8 +933,7 @@ class npc_brann_bronzebeard_algalon : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_BRANN_MOVE_INTRO:
-                            if (_currentPoint < MAX_BRANN_WAYPOINTS_INTRO)
-                                me->GetMotionMaster()->MovePoint(_currentPoint, BrannIntroWaypoint[_currentPoint]);
+                            SetEscortPaused(false);
                             break;
                         case EVENT_SUMMON_ALGALON:
                             if (Creature* algalon = me->GetMap()->SummonCreature(NPC_ALGALON, AlgalonSummonPos))
@@ -957,7 +951,6 @@ class npc_brann_bronzebeard_algalon : public CreatureScript
 
         private:
             EventMap _events;
-            uint32 _currentPoint;
         };
 
         CreatureAI* GetAI(Creature* creature) const override
@@ -977,16 +970,13 @@ class go_celestial_planetarium_access : public GameObjectScript
             {
             }
 
-            bool GossipHello(Player* player, bool isUse) override
+            bool GossipHello(Player* player) override
             {
-                if (!isUse)
-                    return true;
-
                 if (go->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_IN_USE))
                     return true;
 
                 bool hasKey = true;
-                if (LockEntry const* lock = sLockStore.LookupEntry(go->GetGOInfo()->GetLockId()))
+                if (LockEntry const* lock = sLockStore.LookupEntry(go->GetGOInfo()->goober.lockId))
                 {
                     hasKey = false;
                     for (uint32 i = 0; i < MAX_LOCK_CASE; ++i)
@@ -1351,7 +1341,7 @@ class spell_algalon_supermassive_fail : public SpellScriptLoader
                 if (!GetHitPlayer())
                     return;
 
-                GetHitPlayer()->ResetCriteria(CRITERIA_TYPE_BE_SPELL_TARGET, CRITERIA_CONDITION_NO_SPELL_HIT, GetSpellInfo()->Id, true);
+                GetHitPlayer()->ResetAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, ACHIEVEMENT_CRITERIA_CONDITION_NO_SPELL_HIT, GetSpellInfo()->Id, true);
             }
 
             void Register() override
@@ -1363,6 +1353,17 @@ class spell_algalon_supermassive_fail : public SpellScriptLoader
         SpellScript* GetSpellScript() const override
         {
             return new spell_algalon_supermassive_fail_SpellScript();
+        }
+};
+
+class achievement_he_feeds_on_your_tears : public AchievementCriteriaScript
+{
+    public:
+        achievement_he_feeds_on_your_tears() : AchievementCriteriaScript("achievement_he_feeds_on_your_tears") { }
+
+        bool OnCheck(Player* /*source*/, Unit* target) override
+        {
+            return !target->GetAI()->GetData(DATA_HAS_FED_ON_TEARS);
         }
 };
 
@@ -1382,4 +1383,5 @@ void AddSC_boss_algalon_the_observer()
     new spell_algalon_cosmic_smash();
     new spell_algalon_cosmic_smash_damage();
     new spell_algalon_supermassive_fail();
+    new achievement_he_feeds_on_your_tears();
 }

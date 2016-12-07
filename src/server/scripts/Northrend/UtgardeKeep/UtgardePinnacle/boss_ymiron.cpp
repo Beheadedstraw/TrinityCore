@@ -286,7 +286,7 @@ public:
         void DespawnBoatGhosts(ObjectGuid& CreatureGUID)
         {
             // @todo: fire visual after ancestor despawns.
-            if (!CreatureGUID.IsEmpty())
+            if (CreatureGUID)
                 if (Creature* temp = ObjectAccessor::GetCreature(*me, CreatureGUID))
                     temp->DisappearAndDie();
 

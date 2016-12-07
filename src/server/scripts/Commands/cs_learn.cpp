@@ -112,6 +112,9 @@ public:
         else
             targetPlayer->LearnSpell(spell, false);
 
+        if (GetTalentSpellCost(spellInfo->GetFirstRankSpell()->Id))
+            targetPlayer->SendTalentsInfoData(false);
+
         return true;
     }
 
@@ -145,7 +148,7 @@ public:
         ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(handler->GetSession()->GetPlayer()->getClass());
         if (!classEntry)
             return true;
-        uint32 family = classEntry->SpellClassSet;
+        uint32 family = classEntry->spellfamily;
 
         for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
         {
@@ -153,7 +156,7 @@ public:
             if (!entry)
                 continue;
 
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry->SpellID);
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry->spellId);
             if (!spellInfo)
                 continue;
 
@@ -167,6 +170,10 @@ public:
 
             // skip other spell families
             if (spellInfo->SpellFamilyName != family)
+                continue;
+
+            // skip spells with first rank learned as talent (and all talents then also)
+            if (GetTalentSpellCost(spellInfo->GetFirstRankSpell()->Id) > 0)
                 continue;
 
             // skip broken spells
@@ -183,7 +190,7 @@ public:
     static bool HandleLearnAllMyTalentsCommand(ChatHandler* handler, char const* /*args*/)
     {
         Player* player = handler->GetSession()->GetPlayer();
-        uint32 playerClass = player->getClass();
+        uint32 classMask = player->getClassMask();
 
         for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
         {
@@ -191,25 +198,44 @@ public:
             if (!talentInfo)
                 continue;
 
-            if (playerClass != talentInfo->ClassID)
+            TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
+            if (!talentTabInfo)
                 continue;
 
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talentInfo->SpellID);
+            if ((classMask & talentTabInfo->ClassMask) == 0)
+                continue;
+
+            // search highest talent rank
+            uint32 spellId = 0;
+            for (int8 rank = MAX_TALENT_RANK - 1; rank >= 0; --rank)
+            {
+                if (talentInfo->RankID[rank] != 0)
+                {
+                    spellId = talentInfo->RankID[rank];
+                    break;
+                }
+            }
+
+            if (!spellId)                                        // ??? none spells in talent
+                continue;
+
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
             if (!spellInfo || !SpellMgr::IsSpellValid(spellInfo, handler->GetSession()->GetPlayer(), false))
                 continue;
 
             // learn highest rank of talent and learn all non-talent spell ranks (recursive by tree)
-            player->LearnSpellHighestRank(talentInfo->SpellID);
-            player->AddTalent(talentInfo, player->GetActiveTalentGroup(), true);
+            player->LearnSpellHighestRank(spellId);
+            player->AddTalent(spellId, player->GetActiveSpec(), true);
         }
+
+        player->SetFreeTalentPoints(0);
 
         handler->SendSysMessage(LANG_COMMAND_LEARN_CLASS_TALENTS);
         return true;
     }
 
-    static bool HandleLearnAllMyPetTalentsCommand(ChatHandler* /*handler*/, char const* /*args*/)
+    static bool HandleLearnAllMyPetTalentsCommand(ChatHandler* handler, char const* /*args*/)
     {
-        /* TODO: 6.x remove pet talents
         Player* player = handler->GetSession()->GetPlayer();
 
         Pet* pet = player->GetPet();
@@ -236,7 +262,7 @@ public:
             return false;
         }
 
-        if (petFamily->PetTalentType < 0)                       // not hunter pet
+        if (petFamily->petTalentType < 0)                       // not hunter pet
         {
             handler->SendSysMessage(LANG_WRONG_PET_TYPE);
             handler->SetSentErrorMessage(true);
@@ -254,7 +280,7 @@ public:
                 continue;
 
             // prevent learn talent for different family (cheating)
-            if (((1 << petFamily->PetTalentType) & talentTabInfo->petTalentMask) == 0)
+            if (((1 << petFamily->petTalentType) & talentTabInfo->petTalentMask) == 0)
                 continue;
 
             // search highest talent rank
@@ -282,7 +308,7 @@ public:
 
         pet->SetFreeTalentPoints(0);
 
-        handler->SendSysMessage(LANG_COMMAND_LEARN_PET_TALENTS);*/
+        handler->SendSysMessage(LANG_COMMAND_LEARN_PET_TALENTS);
         return true;
     }
 
@@ -322,10 +348,10 @@ public:
             if (!skillInfo)
                 continue;
 
-            if ((skillInfo->CategoryID == SKILL_CATEGORY_PROFESSION || skillInfo->CategoryID == SKILL_CATEGORY_SECONDARY) &&
-                skillInfo->CanLink)                             // only prof. with recipes have
+            if ((skillInfo->categoryId == SKILL_CATEGORY_PROFESSION || skillInfo->categoryId == SKILL_CATEGORY_SECONDARY) &&
+                skillInfo->canLink)                             // only prof. with recipes have
             {
-                HandleLearnSkillRecipesHelper(target, i);
+                HandleLearnSkillRecipesHelper(target, skillInfo->id);
             }
         }
 
@@ -358,20 +384,20 @@ public:
 
         std::string name;
 
-        uint32 skillId = 0;
+        SkillLineEntry const* targetSkillInfo = NULL;
         for (uint32 i = 1; i < sSkillLineStore.GetNumRows(); ++i)
         {
             SkillLineEntry const* skillInfo = sSkillLineStore.LookupEntry(i);
             if (!skillInfo)
                 continue;
 
-            if ((skillInfo->CategoryID != SKILL_CATEGORY_PROFESSION &&
-                skillInfo->CategoryID != SKILL_CATEGORY_SECONDARY) ||
-                !skillInfo->CanLink)                            // only prof with recipes have set
+            if ((skillInfo->categoryId != SKILL_CATEGORY_PROFESSION &&
+                skillInfo->categoryId != SKILL_CATEGORY_SECONDARY) ||
+                !skillInfo->canLink)                            // only prof with recipes have set
                 continue;
 
             int locale = handler->GetSessionDbcLocale();
-            name = skillInfo->DisplayName->Str[locale];
+            name = skillInfo->name[locale];
             if (name.empty())
                 continue;
 
@@ -383,7 +409,7 @@ public:
                     if (locale == handler->GetSessionDbcLocale())
                         continue;
 
-                    name = skillInfo->DisplayName->Str[locale];
+                    name = skillInfo->name[locale];
                     if (name.empty())
                         continue;
 
@@ -394,18 +420,18 @@ public:
 
             if (locale < TOTAL_LOCALES)
             {
-                skillId = i;
+                targetSkillInfo = skillInfo;
                 break;
             }
         }
 
-        if (!skillId)
+        if (!targetSkillInfo)
             return false;
 
-        HandleLearnSkillRecipesHelper(target, skillId);
+        HandleLearnSkillRecipesHelper(target, targetSkillInfo->id);
 
-        uint16 maxLevel = target->GetPureMaxSkillValue(skillId);
-        target->SetSkill(skillId, target->GetSkillStep(skillId), maxLevel, maxLevel);
+        uint16 maxLevel = target->GetPureMaxSkillValue(targetSkillInfo->id);
+        target->SetSkill(targetSkillInfo->id, target->GetSkillStep(targetSkillInfo->id), maxLevel, maxLevel);
         handler->PSendSysMessage(LANG_COMMAND_LEARN_ALL_RECIPES, name.c_str());
         return true;
     }
@@ -421,26 +447,26 @@ public:
                 continue;
 
             // wrong skill
-            if (skillLine->SkillLine != skillId)
+            if (skillLine->skillId != skillId)
                 continue;
 
             // not high rank
-            if (skillLine->SupercedesSpell)
+            if (skillLine->forward_spellid)
                 continue;
 
             // skip racial skills
-            if (skillLine->RaceMask != 0)
+            if (skillLine->racemask != 0)
                 continue;
 
             // skip wrong class skills
-            if (skillLine->ClassMask && (skillLine->ClassMask & classmask) == 0)
+            if (skillLine->classmask && (skillLine->classmask & classmask) == 0)
                 continue;
 
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(skillLine->SpellID);
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(skillLine->spellId);
             if (!spellInfo || !SpellMgr::IsSpellValid(spellInfo, player, false))
                 continue;
 
-            player->LearnSpell(skillLine->SpellID, false);
+            player->LearnSpell(skillLine->spellId, false);
         }
     }
 
@@ -472,6 +498,9 @@ public:
             target->RemoveSpell(spellId, false, !allRanks);
         else
             handler->SendSysMessage(LANG_FORGET_SPELL);
+
+        if (GetTalentSpellCost(spellId))
+            target->SendTalentsInfoData(false);
 
         return true;
     }

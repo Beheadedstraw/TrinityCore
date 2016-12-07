@@ -19,7 +19,7 @@
 /* ScriptData
 SDName: Ghostlands
 SD%Complete: 100
-SDComment:
+SDComment: Quest support: 9212.
 SDCategory: Ghostlands
 EndScriptData */
 
@@ -35,7 +35,6 @@ EndContentData */
 #include "WorldSession.h"
 
 /*######
-
 ## npc_ranger_lilatha
 ######*/
 

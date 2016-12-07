@@ -268,8 +268,8 @@ class boss_magtheridon : public CreatureScript
             void SetClicker(ObjectGuid cubeGUID, ObjectGuid clickerGUID)
             {
                 // to avoid multiclicks from 1 cube
-                if (!Cube[cubeGUID].IsEmpty())
-                    DebuffClicker(ObjectAccessor::GetUnit(*me, Cube[cubeGUID]));
+                if (ObjectGuid guid = Cube[cubeGUID])
+                    DebuffClicker(ObjectAccessor::GetUnit(*me, guid));
                 Cube[cubeGUID] = clickerGUID;
                 NeedCheckCube = true;
             }

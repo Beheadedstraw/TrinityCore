@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 5;
 
-enum AKDataTypes
+enum DataTypes
 {
     // Encounter States/Boss GUIDs
     DATA_ELDER_NADOX                = 0,
@@ -44,7 +44,7 @@ enum AKDataTypes
     DATA_ALL_INITIAND_DEAD          = 13
 };
 
-enum AKCreatureIds
+enum CreatureIds
 {
     NPC_ELDER_NADOX                 = 29309,
     NPC_PRINCE_TALDARAM             = 29308,
@@ -72,7 +72,7 @@ enum AKCreatureIds
     NPC_TWISTED_VISAGE              = 30625
 };
 
-enum AKGameObjectIds
+enum GameObjectIds
 {
     GO_PRINCE_TALDARAM_GATE         = 192236,
     GO_PRINCE_TALDARAM_PLATFORM     = 193564,

@@ -295,23 +295,28 @@ public:
             return false;
 
         Player* target = ObjectAccessor::FindPlayerByName(args);
-        ObjectGuid targetGuid;
+        ObjectGuid::LowType targetGuid = 0;
         std::string name(args);
 
         if (!target)
         {
-            targetGuid = ObjectMgr::GetPlayerGUIDByName(name);
-            if (targetGuid.IsEmpty())
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
+            stmt->setString(0, name);
+            PreparedQueryResult resultCharacter = CharacterDatabase.Query(stmt);
+
+            if (!resultCharacter)
             {
                 handler->PSendSysMessage(LANG_BANINFO_NOCHARACTER);
                 return false;
             }
+
+            targetGuid = (*resultCharacter)[0].GetUInt32();
         }
         else
-            targetGuid = target->GetGUID();
+            targetGuid = target->GetGUID().GetCounter();
 
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANINFO);
-        stmt->setUInt64(0, targetGuid.GetCounter());
+        stmt->setUInt32(0, targetGuid);
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
         if (!result)
         {
@@ -511,7 +516,7 @@ public:
             {
                 Field* fields = result->Fetch();
                 PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANNED_NAME);
-                stmt2->setUInt64(0, fields[0].GetUInt64());
+                stmt2->setUInt32(0, fields[0].GetUInt32());
                 PreparedQueryResult banResult = CharacterDatabase.Query(stmt2);
                 if (banResult)
                     handler->PSendSysMessage("%s", (*banResult)[0].GetCString());
@@ -533,7 +538,7 @@ public:
                 std::string char_name = fields[1].GetString();
 
                 PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANINFO_LIST);
-                stmt2->setUInt64(0, fields[0].GetUInt64());
+                stmt2->setUInt32(0, fields[0].GetUInt32());
                 PreparedQueryResult banInfo = CharacterDatabase.Query(stmt2);
                 if (banInfo)
                 {

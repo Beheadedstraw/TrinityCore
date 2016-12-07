@@ -97,7 +97,7 @@ public:
         {
             Initialize();
             _Reset();
-            instance->DoStopCriteriaTimer(CRITERIA_TIMED_TYPE_EVENT, ACHIEV_TIMELY_DEATH_START_EVENT);
+            instance->DoStopTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMELY_DEATH_START_EVENT);
         }
 
         void EnterCombat(Unit* /*who*/) override
@@ -108,7 +108,7 @@ public:
             events.ScheduleEvent(EVENT_ARC_LIGHTNING, 15000);
             events.ScheduleEvent(EVENT_LIGHTNING_NOVA, 20000);
             events.ScheduleEvent(EVENT_RESUME_PULSING_SHOCKWAVE, 1000);
-            instance->DoStartCriteriaTimer(CRITERIA_TIMED_TYPE_EVENT, ACHIEV_TIMELY_DEATH_START_EVENT);
+            instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMELY_DEATH_START_EVENT);
         }
 
         void JustDied(Unit* /*killer*/) override
@@ -155,7 +155,7 @@ public:
                         Talk(SAY_NOVA);
                         Talk(EMOTE_NOVA);
                         DoCastAOE(SPELL_LIGHTNING_NOVA);
-                        me->RemoveAurasDueToSpell(SPELL_PULSING_SHOCKWAVE);
+                        me->RemoveAurasDueToSpell(sSpellMgr->GetSpellIdForDifficulty(SPELL_PULSING_SHOCKWAVE, me));
                         events.ScheduleEvent(EVENT_RESUME_PULSING_SHOCKWAVE, DUNGEON_MODE(5000, 4000)); // Pause Pulsing Shockwave aura
                         events.ScheduleEvent(EVENT_LIGHTNING_NOVA, urand(20000, 21000));
                         break;

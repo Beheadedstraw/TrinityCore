@@ -19,14 +19,13 @@
 #include "CreatureTextMgr.h"
 #include "GridNotifiersImpl.h"
 #include "GossipDef.h"
-#include "MovementPackets.h"
 #include "MoveSpline.h"
 #include "MoveSplineInit.h"
 #include "PassiveAI.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "SpellAuraEffects.h"
 #include "SpellHistory.h"
+#include "SpellAuraEffects.h"
 #include "SpellScript.h"
 #include "Transport.h"
 #include "TransportMgr.h"
@@ -405,7 +404,7 @@ public:
             if (_respawnCooldowns[i] > now)
                 continue;
 
-            if (!_controlledSlots[i].IsEmpty())
+            if (_controlledSlots[i])
             {
                 Creature* current = ObjectAccessor::GetCreature(*_transport, _controlledSlots[i]);
                 if (current && current->IsAlive())
@@ -746,6 +745,12 @@ class npc_gunship : public CreatureScript
                     if (isVictory)
                     {
                         cannon->CastSpell(cannon, SPELL_EJECT_ALL_PASSENGERS_BELOW_ZERO, TRIGGERED_FULL_MASK);
+
+                        WorldPacket data(SMSG_PLAYER_VEHICLE_DATA, cannon->GetPackGUID().size() + 4);
+                        data << cannon->GetPackGUID();
+                        data << uint32(0);
+                        cannon->SendMessageToSet(&data, true);
+
                         cannon->RemoveVehicleKit();
                     }
                     else
@@ -995,7 +1000,7 @@ class npc_high_overlord_saurfang_igb : public CreatureScript
                             Talk(SAY_SAURFANG_INTRO_2);
                             break;
                         case EVENT_INTRO_SUMMON_SKYBREAKER:
-                            sTransportMgr->CreateTransport(GO_THE_SKYBREAKER_H, UI64LIT(0), me->GetMap());
+                            sTransportMgr->CreateTransport(GO_THE_SKYBREAKER_H, 0, me->GetMap());
                             break;
                         case EVENT_INTRO_H_3:
                             Talk(SAY_SAURFANG_INTRO_3);
@@ -1264,7 +1269,7 @@ class npc_muradin_bronzebeard_igb : public CreatureScript
                             Talk(SAY_MURADIN_INTRO_2);
                             break;
                         case EVENT_INTRO_SUMMON_ORGRIMS_HAMMER:
-                            sTransportMgr->CreateTransport(GO_ORGRIMS_HAMMER_A, UI64LIT(0), me->GetMap());
+                            sTransportMgr->CreateTransport(GO_ORGRIMS_HAMMER_A, 0, me->GetMap());
                             break;
                         case EVENT_INTRO_A_3:
                             Talk(SAY_MURADIN_INTRO_3);
@@ -1716,10 +1721,7 @@ class npc_gunship_mage : public CreatureScript
                 me->SetReactState(REACT_PASSIVE);
             }
 
-            void EnterEvadeMode(EvadeReason why) override
-            {
-                ScriptedAI::EnterEvadeMode(why);
-            }
+            void EnterEvadeMode(EvadeReason /*why*/) override { }
 
             void MovementInform(uint32 type, uint32 pointId) override
             {
@@ -1769,7 +1771,7 @@ class npc_gunship_mage : public CreatureScript
           but it actually is a valid flag - needs more research to fix both freezes and keep the flag as is (see WorldSession::ReadMovementInfo)
 
 Example packet:
-ClientToServer: CMSG_MOVE_FORCE_ROOT_ACK (0x00E9) Length: 67 ConnectionIndex: 0 Time: 03/04/2010 03:57:55.000 Number: 471326
+ClientToServer: CMSG_FORCE_MOVE_ROOT_ACK (0x00E9) Length: 67 ConnectionIndex: 0 Time: 03/04/2010 03:57:55.000 Number: 471326
 Guid:
 Movement Counter: 80
 Movement Flags: OnTransport, Root (2560)
@@ -1839,7 +1841,7 @@ class spell_igb_rocket_pack : public SpellScriptLoader
             void HandleRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
             {
                 SpellInfo const* damageInfo = sSpellMgr->AssertSpellInfo(SPELL_ROCKET_PACK_DAMAGE);
-                GetTarget()->CastCustomSpell(SPELL_ROCKET_PACK_DAMAGE, SPELLVALUE_BASE_POINT0, 2 * (damageInfo->GetEffect(EFFECT_0)->CalcValue() + aurEff->GetTickNumber() * aurEff->GetPeriod()), NULL, TRIGGERED_FULL_MASK);
+                GetTarget()->CastCustomSpell(SPELL_ROCKET_PACK_DAMAGE, SPELLVALUE_BASE_POINT0, 2 * (damageInfo->Effects[EFFECT_0].CalcValue() + aurEff->GetTickNumber() * aurEff->GetAmplitude()), NULL, TRIGGERED_FULL_MASK);
                 GetTarget()->CastSpell(NULL, SPELL_ROCKET_BURST, TRIGGERED_FULL_MASK);
             }
 
@@ -1969,7 +1971,7 @@ class spell_igb_periodic_trigger_with_power_cost : public SpellScriptLoader
             void HandlePeriodicTick(AuraEffect const* /*aurEff*/)
             {
                 PreventDefaultAction();
-                GetTarget()->CastSpell(GetTarget(), GetSpellInfo()->GetEffect(EFFECT_0)->TriggerSpell, TriggerCastFlags(TRIGGERED_FULL_MASK & ~TRIGGERED_IGNORE_POWER_AND_REAGENT_COST));
+                GetTarget()->CastSpell(GetTarget(), GetSpellInfo()->Effects[EFFECT_0].TriggerSpell, TriggerCastFlags(TRIGGERED_FULL_MASK & ~TRIGGERED_IGNORE_POWER_AND_REAGENT_COST));
             }
 
             void Register() override
@@ -2084,7 +2086,7 @@ class spell_igb_overheat : public SpellScriptLoader
                 return GetUnitOwner()->IsVehicle();
             }
 
-            void SendClientControl(bool value)
+            void SendClientControl(uint8 value)
             {
                 if (Vehicle* vehicle = GetUnitOwner()->GetVehicleKit())
                 {
@@ -2092,10 +2094,10 @@ class spell_igb_overheat : public SpellScriptLoader
                     {
                         if (Player* player = passenger->ToPlayer())
                         {
-                            WorldPackets::Movement::ControlUpdate data;
-                            data.Guid = GetUnitOwner()->GetGUID();
-                            data.On = value;
-                            player->GetSession()->SendPacket(data.Write());
+                            WorldPacket data(SMSG_CLIENT_CONTROL_UPDATE, GetUnitOwner()->GetPackGUID().size() + 1);
+                            data << GetUnitOwner()->GetPackGUID();
+                            data << uint8(value);
+                            player->GetSession()->SendPacket(&data);
                         }
                     }
                 }
@@ -2103,12 +2105,12 @@ class spell_igb_overheat : public SpellScriptLoader
 
             void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
-                SendClientControl(false);
+                SendClientControl(0);
             }
 
             void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
-                SendClientControl(true);
+                SendClientControl(1);
             }
 
             void Register() override
@@ -2133,17 +2135,14 @@ class spell_igb_below_zero : public SpellScriptLoader
         {
             PrepareSpellScript(spell_igb_below_zero_SpellScript);
 
-            void RemovePassengers(SpellMissInfo missInfo)
+            void RemovePassengers()
             {
-                if (missInfo != SPELL_MISS_NONE)
-                    return;
-
                 GetHitUnit()->CastSpell(GetHitUnit(), SPELL_EJECT_ALL_PASSENGERS_BELOW_ZERO, TRIGGERED_FULL_MASK);
             }
 
             void Register() override
             {
-                BeforeHit += BeforeSpellHitFn(spell_igb_below_zero_SpellScript::RemovePassengers);
+                BeforeHit += SpellHitFn(spell_igb_below_zero_SpellScript::RemovePassengers);
             }
         };
 
@@ -2459,6 +2458,33 @@ class spell_igb_teleport_players_on_victory : public SpellScriptLoader
         }
 };
 
+// 71201 - Battle Experience - proc should never happen, handled in script
+class spell_igb_battle_experience_check : public SpellScriptLoader
+{
+public:
+    spell_igb_battle_experience_check() : SpellScriptLoader("spell_igb_battle_experience_check") { }
+
+    class spell_igb_battle_experience_check_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_igb_battle_experience_check_AuraScript);
+
+        bool CheckProc(ProcEventInfo& /*eventInfo*/)
+        {
+            return false;
+        }
+
+        void Register() override
+        {
+            DoCheckProc += AuraCheckProcFn(spell_igb_battle_experience_check_AuraScript::CheckProc);
+        }
+    };
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_igb_battle_experience_check_AuraScript();
+    }
+};
+
 class achievement_im_on_a_boat : public AchievementCriteriaScript
 {
     public:
@@ -2498,5 +2524,6 @@ void AddSC_boss_icecrown_gunship_battle()
     new spell_igb_gunship_fall_teleport();
     new spell_igb_check_for_players();
     new spell_igb_teleport_players_on_victory();
+    new spell_igb_battle_experience_check();
     new achievement_im_on_a_boat();
 }

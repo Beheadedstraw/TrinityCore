@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 4;
 
-enum MTDataTypes
+enum DataTypes
 {
     DATA_SELIN,
     DATA_VEXALLUS,
@@ -38,7 +38,7 @@ enum MTDataTypes
     DATA_ESCAPE_ORB
 };
 
-enum MTCreatureIds
+enum CreatureIds
 {
     NPC_SELIN               = 24723,
     NPC_DELRISSA            = 24560,
@@ -47,7 +47,7 @@ enum MTCreatureIds
     NPC_HUMAN_KALECGOS      = 24848
 };
 
-enum MTGameObjectIds
+enum GameObjectIds
 {
     GO_VEXALLUS_DOOR        = 187896,
     GO_SELIN_DOOR           = 187979,
@@ -59,17 +59,17 @@ enum MTGameObjectIds
     GO_ESCAPE_ORB           = 188173
 };
 
-enum MTInstanceEventIds
+enum InstanceEventIds
 {
     EVENT_SPAWN_KALECGOS    = 16547
 };
 
-enum MTInstanceText
+enum InstanceText
 {
     SAY_KALECGOS_SPAWN      = 0
 };
 
-enum MTMovementData
+enum MovementData
 {
     PATH_KALECGOS_FLIGHT    = 248440
 };

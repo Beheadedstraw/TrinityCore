@@ -331,6 +331,9 @@ class boss_blood_council_controller : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
             }
 
@@ -488,7 +491,7 @@ class boss_prince_keleseth_icc : public CreatureScript
                     case ACTION_STAND_UP:
                         me->RemoveAurasDueToSpell(SPELL_FEIGN_DEATH);
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
-                        me->RemoveFlag(OBJECT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+                        me->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
                         me->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
                         me->ForceValuesUpdateAtIndex(UNIT_NPC_FLAGS);   // was in sniff. don't ask why
                         me->m_Events.AddEvent(new StandUpEvent(*me), me->m_Events.CalculateTime(1000));
@@ -559,6 +562,9 @@ class boss_prince_keleseth_icc : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 // does not melee
@@ -699,7 +705,7 @@ class boss_prince_taldaram_icc : public CreatureScript
                     case ACTION_STAND_UP:
                         me->RemoveAurasDueToSpell(SPELL_FEIGN_DEATH);
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
-                        me->RemoveFlag(OBJECT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+                        me->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
                         me->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
                         me->ForceValuesUpdateAtIndex(UNIT_NPC_FLAGS);   // was in sniff. don't ask why
                         me->m_Events.AddEvent(new StandUpEvent(*me), me->m_Events.CalculateTime(1000));
@@ -775,6 +781,9 @@ class boss_prince_taldaram_icc : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -931,7 +940,7 @@ class boss_prince_valanar_icc : public CreatureScript
                     case ACTION_STAND_UP:
                         me->RemoveAurasDueToSpell(SPELL_FEIGN_DEATH);
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
-                        me->RemoveFlag(OBJECT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+                        me->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
                         me->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
                         me->ForceValuesUpdateAtIndex(UNIT_NPC_FLAGS);   // was in sniff. don't ask why
                         me->m_Events.AddEvent(new StandUpEvent(*me), me->m_Events.CalculateTime(1000));
@@ -1012,6 +1021,9 @@ class boss_prince_valanar_icc : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -1149,7 +1161,7 @@ class npc_ball_of_flame : public CreatureScript
 
             void MovementInform(uint32 type, uint32 id) override
             {
-                if (type == CHASE_MOTION_TYPE && id == _chaseGUID.GetCounter() && !_chaseGUID.IsEmpty())
+                if (type == CHASE_MOTION_TYPE && id == _chaseGUID.GetCounter() && _chaseGUID)
                 {
                     me->RemoveAurasDueToSpell(SPELL_BALL_OF_FLAMES_PERIODIC);
                     DoCast(me, SPELL_FLAMES);
@@ -1486,6 +1498,26 @@ class spell_taldaram_ball_of_inferno_flame : public SpellScriptLoader
         {
             return new spell_taldaram_ball_of_inferno_flame_SpellScript();
         }
+
+        class spell_taldaram_ball_of_inferno_flame_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_taldaram_ball_of_inferno_flame_AuraScript);
+
+            void HandleStackDrop(ProcEventInfo& /*eventInfo*/)
+            {
+                ModStackAmount(-1);
+            }
+
+            void Register() override
+            {
+                OnProc += AuraProcFn(spell_taldaram_ball_of_inferno_flame_AuraScript::HandleStackDrop);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_taldaram_ball_of_inferno_flame_AuraScript();
+        }
 };
 
 // 72080 - Kinetic Bomb (Valanar)
@@ -1555,18 +1587,15 @@ class spell_valanar_kinetic_bomb_knockback : public SpellScriptLoader
         {
             PrepareSpellScript(spell_valanar_kinetic_bomb_knockback_SpellScript);
 
-            void KnockIntoAir(SpellMissInfo missInfo)
+            void KnockIntoAir()
             {
-                if (missInfo != SPELL_MISS_NONE)
-                    return;
-
                 if (Creature* target = GetHitCreature())
                     target->AI()->DoAction(ACTION_KINETIC_BOMB_JUMP);
             }
 
             void Register() override
             {
-                BeforeHit += BeforeSpellHitFn(spell_valanar_kinetic_bomb_knockback_SpellScript::KnockIntoAir);
+                BeforeHit += SpellHitFn(spell_valanar_kinetic_bomb_knockback_SpellScript::KnockIntoAir);
             }
         };
 
@@ -1664,7 +1693,7 @@ class at_blood_prince_council_start_intro : public AreaTriggerScript
     public:
         at_blood_prince_council_start_intro() : AreaTriggerScript("at_blood_prince_council_start_intro") { }
 
-        bool OnTrigger(Player* player, AreaTriggerEntry const* /*areaTrigger*/, bool /*entered*/) override
+        bool OnTrigger(Player* player, AreaTriggerEntry const* /*areaTrigger*/) override
         {
             if (InstanceScript* instance = player->GetInstanceScript())
                 if (Creature* bloodQueen = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_BLOOD_QUEEN_LANA_THEL_COUNCIL)))

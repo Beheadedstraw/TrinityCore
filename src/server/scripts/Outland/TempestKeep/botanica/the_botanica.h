@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 5;
 
-enum BCDataTypes
+enum DataTypes
 {
     DATA_COMMANDER_SARANNIS             = 0,
     DATA_HIGH_BOTANIST_FREYWINN         = 1,
@@ -32,7 +32,7 @@ enum BCDataTypes
     DATA_WARP_SPLINTER                  = 4
 };
 
-enum BCCreatureIds
+enum CreatureIds
 {
     NPC_COMMANDER_SARANNIS              = 17976,
     NPC_HIGH_BOTANIST_FREYWINN          = 17975,

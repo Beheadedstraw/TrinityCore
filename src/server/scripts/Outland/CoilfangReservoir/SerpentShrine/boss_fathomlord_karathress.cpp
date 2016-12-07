@@ -144,8 +144,7 @@ public:
             RAdvisors[2] = instance->GetGuidData(DATA_CARIBDIS);
             // Respawn of the 3 Advisors
             for (uint8 i = 0; i < MAX_ADVISORS; ++i)
-            {
-                if (!RAdvisors[i].IsEmpty())
+                if (RAdvisors[i])
                 {
                     Creature* advisor = ObjectAccessor::GetCreature(*me, RAdvisors[i]);
                     if (advisor && !advisor->IsAlive())
@@ -155,7 +154,6 @@ public:
                         advisor->GetMotionMaster()->MoveTargetedHome();
                     }
                 }
-            }
 
             instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
         }
@@ -274,8 +272,7 @@ public:
                 BlessingOfTides = true;
                 bool continueTriggering = false;
                 for (uint8 i = 0; i < MAX_ADVISORS; ++i)
-                {
-                    if (!Advisors[i].IsEmpty())
+                    if (Advisors[i])
                     {
                         Creature* advisor = ObjectAccessor::GetCreature(*me, Advisors[i]);
                         if (advisor && advisor->IsAlive())
@@ -284,8 +281,6 @@ public:
                             break;
                         }
                     }
-                }
-
                 if (continueTriggering)
                 {
                     DoCast(me, SPELL_BLESSING_OF_THE_TIDES);

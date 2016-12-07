@@ -133,7 +133,7 @@ public:
             } else SporeStriders_Timer -= diff;
 
             // Levitate
-            if (!LevitatedTarget.IsEmpty())
+            if (LevitatedTarget)
             {
                 if (LevitatedTarget_Timer <= diff)
                 {

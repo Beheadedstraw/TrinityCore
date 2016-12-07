@@ -28,6 +28,7 @@
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 
 enum MageSpells
 {
@@ -109,10 +110,10 @@ class npc_pet_mage_mirror_image : public CreatureScript
                 }
                 // Prioritize units with threat referenced to owner
                 if (highestThreat > 0.0f && highestThreatUnit)
-                        me->Attack(highestThreatUnit, false);
+                    me->Attack(highestThreatUnit, false);
                 // If there is no such target, try to attack nearest hostile unit if such exists
                 else if (nearestPlayer)
-                        me->Attack(nearestPlayer, false);
+                    me->Attack(nearestPlayer, false);
             }
 
             bool IsInThreatList(Unit* target)
@@ -198,8 +199,8 @@ class npc_pet_mage_mirror_image : public CreatureScript
                 if (!target || me->GetVictim() != target)
                 {
                     Unit* ownerTarget = nullptr;
-                    if (Player* ownerPlayer = me->GetCharmerOrOwner()->ToPlayer())
-                        ownerTarget = ownerPlayer->GetSelectedUnit();
+                    if (Player* owner = me->GetCharmerOrOwner()->ToPlayer())
+                        ownerTarget = owner->GetSelectedUnit();
 
                     // recognize which victim will be choosen
                     if (ownerTarget && ownerTarget->GetTypeId() == TYPEID_PLAYER)

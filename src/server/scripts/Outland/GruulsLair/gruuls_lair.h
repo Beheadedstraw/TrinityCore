@@ -23,14 +23,14 @@
 
 uint32 const EncounterCount = 2;
 
-enum GLDataTypes
+enum DataTypes
 {
     // Encounter States/Boss GUIDs
     DATA_MAULGAR                = 0,
     DATA_GRUUL                  = 1
 };
 
-enum GLCreatureIds
+enum CreatureIds
 {
     NPC_MAULGAR                 = 18831,
     NPC_KROSH_FIREHAND          = 18832,
@@ -39,7 +39,7 @@ enum GLCreatureIds
     NPC_BLINDEYE_THE_SEER       = 18836
 };
 
-enum GLGameObjectIds
+enum GameObjectIds
 {
     GO_MAULGAR_DOOR             = 184468,
     GO_GRUUL_DOOR               = 184662

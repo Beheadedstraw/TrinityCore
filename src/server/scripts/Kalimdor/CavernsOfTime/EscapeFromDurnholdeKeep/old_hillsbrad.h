@@ -21,7 +21,7 @@
 
 #define DataHeader "OH"
 
-enum OHDataTypes
+enum DataTypes
 {
     TYPE_BARREL_DIVERSION   = 1,
     TYPE_THRALL_EVENT       = 2,
@@ -36,7 +36,7 @@ enum OHDataTypes
 
 };
 
-enum OHWorldStateIds
+enum WorldStateIds
 {
     WORLD_STATE_OH              = 2436
 };

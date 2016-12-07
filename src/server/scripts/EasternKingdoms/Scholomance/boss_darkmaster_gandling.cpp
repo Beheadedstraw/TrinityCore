@@ -121,6 +121,9 @@ class boss_darkmaster_gandling : public CreatureScript
                                 events.ScheduleEvent(EVENT_SHADOW_PORTAL, urand(17000, 27000));
                             }
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
                 DoMeleeAttackIfReady();
             }
@@ -314,7 +317,7 @@ class spell_shadow_portal_rooms : public SpellScriptLoader
                 int8 phase_to_set = 0;
                 int32 gate_to_close = 0;
 
-                switch (GetSpellInfo()->GetEffect(effIndex)->MiscValue)
+                switch (GetSpellInfo()->Effects[effIndex].MiscValue)
                 {
                     case SPELL_EVENT_HALLOFSECRETS:
                         pos_to_summon = 0; // Not yet spawned

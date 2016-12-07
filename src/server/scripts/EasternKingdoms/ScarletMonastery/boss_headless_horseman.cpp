@@ -433,7 +433,7 @@ public:
         {
             Initialize();
             DoCast(me, SPELL_HEAD);
-            if (!headGUID.IsEmpty())
+            if (headGUID)
             {
                 if (Creature* Head = ObjectAccessor::GetCreature((*me), headGUID))
                     Head->DespawnOrUnsummon();
@@ -909,7 +909,7 @@ void npc_head::npc_headAI::Disappear()
     if (withbody)
         return;
 
-    if (!bodyGUID.IsEmpty())
+    if (bodyGUID)
     {
         Creature* body = ObjectAccessor::GetCreature((*me), bodyGUID);
         if (body && body->IsAlive())

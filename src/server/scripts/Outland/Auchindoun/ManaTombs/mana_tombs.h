@@ -23,13 +23,21 @@
 
 uint32 const EncounterCount = 4;
 
-enum MTDataTypes
+enum DataTypes
 {
     // Encounter States/Boss GUIDs
     DATA_PANDEMONIUS            = 0,
     DATA_TAVAROK                = 1,
     DATA_NEXUSPRINCE_SHAFFAR    = 2,
     DATA_YOR                    = 3
+};
+
+enum CreatureIds
+{
+};
+
+enum GameObjectIds
+{
 };
 
 template<class AI>

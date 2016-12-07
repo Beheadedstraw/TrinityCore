@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 4;
 
-enum UPDataTypes
+enum DataTypes
 {
     // Encounter States/Boss GUIDs
     DATA_SVALA_SORROWGRAVE          = 0,
@@ -41,10 +41,11 @@ enum UPDataTypes
     DATA_MASSIVE_JORMUNGAR          = 9,
     DATA_FEROCIOUS_RHINO            = 10,
     DATA_GORTOK_ORB                 = 11,
-    DATA_GORTOK_PALEHOOF_SPHERE     = 12
+    DATA_GORTOK_PALEHOOF_SPHERE     = 12,
+    DATA_GRAUF                      = 13
 };
 
-enum UPCreatureIds
+enum CreatureIds
 {
     NPC_SVALA_SORROWGRAVE           = 26668,
     NPC_GORTOK_PALEHOOF             = 26687,
@@ -61,6 +62,16 @@ enum UPCreatureIds
     NPC_FEROCIOUS_RHINO             = 26686,
     NPC_PALEHOOF_ORB                = 26688,
 
+    // Skadi
+    NPC_GRAUF                       = 26893,
+    NPC_YMIRJAR_WARRIOR             = 26690,
+    NPC_YMIRJAR_WITCH_DOCTOR        = 26691,
+    NPC_YMIRJAR_HARPOONER           = 26692,
+    NPC_TRIGGER_RESET               = 23472,
+    NPC_TRIGGER2                    = 19871,
+    NPC_WORLD_TRIGGER               = 22515,
+    NPC_COMBAT_TRIGGER              = 38667,
+
     // Ymiron
     NPC_BJORN                       = 27303,
     NPC_BJORN_VISUAL                = 27304,
@@ -74,7 +85,7 @@ enum UPCreatureIds
     NPC_AVENGING_SPIRIT             = 27386
 };
 
-enum UPGameObjectIds
+enum GameObjectIds
 {
     GO_GORTOK_PALEHOOF_SPHERE       = 188593,
     GO_UTGARDE_MIRROR               = 191745,

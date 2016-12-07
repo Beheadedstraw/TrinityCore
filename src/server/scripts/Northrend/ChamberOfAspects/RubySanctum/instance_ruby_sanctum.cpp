@@ -53,11 +53,11 @@ class instance_ruby_sanctum : public InstanceMapScript
 
             void OnPlayerEnter(Player* /*player*/) override
             {
-                if (!GetGuidData(DATA_HALION_CONTROLLER) && GetBossState(DATA_HALION) != DONE && GetBossState(DATA_GENERAL_ZARITHRIAN) == DONE)
+                if (!GetGuidData(DATA_HALION) && GetBossState(DATA_HALION) != DONE && GetBossState(DATA_GENERAL_ZARITHRIAN) == DONE)
                 {
                     instance->LoadGrid(HalionControllerSpawnPos.GetPositionX(), HalionControllerSpawnPos.GetPositionY());
-                    if (Creature* halionController = instance->SummonCreature(NPC_HALION_CONTROLLER, HalionControllerSpawnPos))
-                        halionController->AI()->DoAction(ACTION_INTRO_HALION);
+                    if (Creature* halionController = instance->GetCreature(GetGuidData(DATA_HALION_CONTROLLER)))
+                        halionController->AI()->DoAction(ACTION_INTRO_HALION_2);
                 }
             }
 
@@ -161,6 +161,12 @@ class instance_ruby_sanctum : public InstanceMapScript
                 }
             }
 
+            void OnCreatureRemove(Creature* creature) override
+            {
+                if (creature->GetEntry() == NPC_HALION)
+                    HalionGUID = ObjectGuid::Empty;
+            }
+
             void OnUnitDeath(Unit* unit) override
             {
                 Creature* creature = unit->ToCreature();
@@ -170,7 +176,7 @@ class instance_ruby_sanctum : public InstanceMapScript
                 if (creature->GetEntry() == NPC_GENERAL_ZARITHRIAN && GetBossState(DATA_HALION) != DONE)
                 {
                     instance->LoadGrid(HalionControllerSpawnPos.GetPositionX(), HalionControllerSpawnPos.GetPositionY());
-                    if (Creature* halionController = instance->SummonCreature(NPC_HALION_CONTROLLER, HalionControllerSpawnPos))
+                    if (Creature* halionController = instance->GetCreature(GetGuidData(DATA_HALION_CONTROLLER)))
                         halionController->AI()->DoAction(ACTION_INTRO_HALION);
                 }
             }
@@ -288,11 +294,11 @@ class instance_ruby_sanctum : public InstanceMapScript
                 return BaltharusSharedHealth;
             }
 
-            void FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet) override
+            void FillInitialWorldStates(WorldPacket& data) override
             {
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_CORPOREALITY_MATERIAL), 50);
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_CORPOREALITY_TWILIGHT), 50);
-                packet.Worldstates.emplace_back(uint32(WORLDSTATE_CORPOREALITY_TOGGLE), 0);
+                data << uint32(WORLDSTATE_CORPOREALITY_MATERIAL) << uint32(50);
+                data << uint32(WORLDSTATE_CORPOREALITY_TWILIGHT) << uint32(50);
+                data << uint32(WORLDSTATE_CORPOREALITY_TOGGLE) << uint32(0);
             }
 
         protected:

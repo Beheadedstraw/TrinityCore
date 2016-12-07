@@ -246,8 +246,8 @@ public:
             me->SetCanDualWield(true);
             me->SetSpeedRate(MOVE_RUN, 2.0f);
             me->SetDisplayId(MODEL_NIGHTELF);
-            me->SetVirtualItem(0, 0);
-            me->SetVirtualItem(1, 0);
+            me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID  , 0);
+            me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, 0);
             DoCast(me, SPELL_DUAL_WIELD, true);
             me->SetCorpseDelay(1000*60*60);
             instance->SetData(DATA_LEOTHERASTHEBLINDEVENT, NOT_STARTED);
@@ -325,7 +325,7 @@ public:
                 // and reseting equipment
                 me->LoadEquipment();
 
-                if (!instance->GetGuidData(DATA_LEOTHERAS_EVENT_STARTER).IsEmpty())
+                if (instance->GetGuidData(DATA_LEOTHERAS_EVENT_STARTER))
                 {
                     Unit* victim = NULL;
                     victim = ObjectAccessor::GetUnit(*me, instance->GetGuidData(DATA_LEOTHERAS_EVENT_STARTER));
@@ -345,17 +345,17 @@ public:
                 me->SetDisplayId(MODEL_DEMON);
 
                 // and removing weapons
-                me->SetVirtualItem(0, 0);
-                me->SetVirtualItem(1, 0);
+                me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID  , 0);
+                me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, 0);
             }
         }
 
         //Despawn all Inner Demon summoned
         void DespawnDemon()
         {
-            for (uint8 i = 0; i < 5; ++i)
+            for (uint8 i=0; i<5; ++i)
             {
-                if (!InnderDemon[i].IsEmpty())
+                if (InnderDemon[i])
                 {
                     //delete creature
                     Creature* creature = ObjectAccessor::GetCreature((*me), InnderDemon[i]);
@@ -373,7 +373,7 @@ public:
         {
             for (uint8 i = 0; i < 5; ++i)
             {
-                if (!InnderDemon[i].IsEmpty())
+                if (InnderDemon[i])
                 {
                     Creature* unit = ObjectAccessor::GetCreature((*me), InnderDemon[i]);
                     if (unit && unit->IsAlive())
@@ -402,10 +402,11 @@ public:
             Talk(SAY_DEATH);
 
             //despawn copy
-            if (!Demon.IsEmpty())
+            if (Demon)
+            {
                 if (Creature* pDemon = ObjectAccessor::GetCreature(*me, Demon))
                     pDemon->DespawnOrUnsummon();
-
+            }
             instance->SetData(DATA_LEOTHERASTHEBLINDEVENT, DONE);
         }
 
@@ -490,8 +491,8 @@ public:
                         me->RemoveAurasDueToSpell(SPELL_WHIRLWIND);
                         me->SetDisplayId(MODEL_DEMON);
                         Talk(SAY_SWITCH_TO_DEMON);
-                        me->SetVirtualItem(0, 0);
-                        me->SetVirtualItem(1, 0);
+                        me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID  , 0);
+                        me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID+1, 0);
                         DemonForm = true;
                         NeedThreatReset = true;
                         SwitchToDemon_Timer = 45000;
@@ -741,7 +742,7 @@ public:
         {
             if (!me->IsInCombat() && !me->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
             {
-                if (!leotherasGUID.IsEmpty())
+                if (leotherasGUID)
                 {
                     Creature* leotheras = ObjectAccessor::GetCreature(*me, leotherasGUID);
                     if (leotheras && leotheras->IsAlive())
@@ -755,7 +756,7 @@ public:
             if (!leotherasGUID)
                 leotherasGUID = instance->GetGuidData(DATA_LEOTHERAS);
 
-            if (!me->IsInCombat() && !instance->GetGuidData(DATA_LEOTHERAS_EVENT_STARTER).IsEmpty())
+            if (!me->IsInCombat() && instance->GetGuidData(DATA_LEOTHERAS_EVENT_STARTER))
             {
                 Unit* victim = NULL;
                 victim = ObjectAccessor::GetUnit(*me, instance->GetGuidData(DATA_LEOTHERAS_EVENT_STARTER));

@@ -151,7 +151,7 @@ class boss_baltharus_the_warborn : public CreatureScript
 
             void DamageTaken(Unit* /*attacker*/, uint32& damage) override
             {
-                if (GetDifficulty() == DIFFICULTY_10_N)
+                if (GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
                 {
                     if (me->HealthBelowPctDamaged(50, damage) && _cloneCount == 1)
                         DoAction(ACTION_CLONE);
@@ -211,6 +211,9 @@ class boss_baltharus_the_warborn : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING) && !introPhase)
+                        return;
                 }
 
                 DoMeleeAttackIfReady();

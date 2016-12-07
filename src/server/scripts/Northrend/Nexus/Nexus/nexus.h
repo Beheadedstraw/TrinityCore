@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 5;
 
-enum NEXDataTypes
+enum DataTypes
 {
     DATA_COMMANDER                    = 0,
     DATA_MAGUS_TELESTRA               = 1,
@@ -36,7 +36,7 @@ enum NEXDataTypes
     TELESTRAS_CONTAINMET_SPHERE       = 7
 };
 
-enum NEXCreatureIds
+enum CreatureIds
 {
     NPC_ANOMALUS                      = 26763,
     NPC_KERISTRASZA                   = 26723,
@@ -56,7 +56,7 @@ enum NEXCreatureIds
     NPC_COMMANDER_KOLURG              = 26798
 };
 
-enum NEXGameObjectIds
+enum GameObjectIds
 {
     GO_ANOMALUS_CONTAINMET_SPHERE     = 188527,
     GO_ORMOROKS_CONTAINMET_SPHERE     = 188528,

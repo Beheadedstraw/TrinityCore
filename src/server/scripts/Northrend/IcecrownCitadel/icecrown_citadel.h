@@ -37,7 +37,7 @@ extern Position const TerenasSpawnHeroic;
 extern Position const SpiritWardenSpawn;
 
 // Shared spells used by more than one script
-enum ICSharedSpells
+enum SharedSpells
 {
     SPELL_BERSERK                       = 26662,
     SPELL_BERSERK2                      = 47008,
@@ -58,7 +58,7 @@ enum ICSharedSpells
     SPELL_SHADOWS_FATE                  = 71169
 };
 
-enum ICTeleporterSpells
+enum TeleporterSpells
 {
     LIGHT_S_HAMMER_TELEPORT         = 70781,
     ORATORY_OF_THE_DAMNED_TELEPORT  = 70856,
@@ -69,7 +69,7 @@ enum ICTeleporterSpells
     SINDRAGOSA_S_LAIR_TELEPORT      = 70861
 };
 
-enum ICDataTypes
+enum DataTypes
 {
     // Encounter States/Boss GUIDs
     DATA_LORD_MARROWGAR                = 0,
@@ -119,7 +119,7 @@ enum ICDataTypes
     DATA_BLOOD_QUEEN_LANA_THEL_COUNCIL = 42
 };
 
-enum ICCreaturesIds
+enum CreaturesIds
 {
     // At Light's Hammer
     NPC_HIGHLORD_TIRION_FORDRING_LH             = 37119,
@@ -322,7 +322,7 @@ enum ICCreaturesIds
     NPC_INVISIBLE_STALKER                       = 30298
 };
 
-enum ICGameObjectsIds
+enum GameObjectsIds
 {
     // ICC Teleporters
     GO_SCOURGE_TRANSPORTER_LICHKING         = 202223,
@@ -428,7 +428,7 @@ enum ICGameObjectsIds
     GO_LAVAMAN_PILLARS_UNCHAINED            = 202438
 };
 
-enum ICAchievementCriteriaIds
+enum AchievementCriteriaIds
 {
     // Lord Marrowgar
     CRITERIA_BONED_10N                  = 12775,
@@ -463,7 +463,7 @@ enum ICAchievementCriteriaIds
     CRITERIA_ONCE_BITTEN_TWICE_SHY_25V  = 13013
 };
 
-enum ICSharedActions
+enum SharedActions
 {
     // Icecrown Gunship Battle
     ACTION_ENEMY_GUNSHIP_TALK   = -369390,
@@ -495,7 +495,7 @@ enum ICSharedActions
     ACTION_FROSTMOURNE_INTRO    = -36823
 };
 
-enum ICWeekliesICC
+enum WeekliesICC
 {
     QUEST_DEPROGRAMMING_10                  = 24869,
     QUEST_DEPROGRAMMING_25                  = 24875,
@@ -509,7 +509,7 @@ enum ICWeekliesICC
     QUEST_RESPITE_FOR_A_TORNMENTED_SOUL_25  = 24880
 };
 
-enum ICWorldStatesICC
+enum WorldStatesICC
 {
     WORLDSTATE_SHOW_TIMER           = 4903,
     WORLDSTATE_EXECUTION_TIME       = 4904,
@@ -518,7 +518,7 @@ enum ICWorldStatesICC
     WORLDSTATE_ATTEMPTS_MAX         = 4942
 };
 
-enum ICAreaIds
+enum AreaIds
 {
     AREA_ICECROWN_CITADEL   = 4812,
     AREA_THE_FROZEN_THRONE  = 4859

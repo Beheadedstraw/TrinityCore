@@ -247,6 +247,9 @@ class boss_festergut : public CreatureScript
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
@@ -376,7 +379,11 @@ class spell_festergut_pungent_blight : public SpellScriptLoader
 
             void HandleScript(SpellEffIndex /*effIndex*/)
             {
-                GetCaster()->RemoveAurasDueToSpell(uint32(GetEffectValue()));
+                // Get Inhaled Blight id for our difficulty
+                uint32 blightId = sSpellMgr->GetSpellIdForDifficulty(uint32(GetEffectValue()), GetCaster());
+
+                // ...and remove it
+                GetCaster()->RemoveAurasDueToSpell(blightId);
                 GetCaster()->ToCreature()->AI()->Talk(EMOTE_PUNGENT_BLIGHT);
             }
 

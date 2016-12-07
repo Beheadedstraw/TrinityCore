@@ -69,15 +69,15 @@ public:
         }
 
         CreatureTemplate const* creatureTemplate = creatureTarget->GetCreatureTemplate();
-        // Creatures with family 0 crashes the server
-        if (!creatureTemplate->family)
+        // Creatures with family CREATURE_FAMILY_NONE crashes the server
+        if (creatureTemplate->family == CREATURE_FAMILY_NONE)
         {
-            handler->PSendSysMessage("This creature cannot be tamed. (family id: 0).");
+            handler->PSendSysMessage("This creature cannot be tamed. Family id: 0 (CREATURE_FAMILY_NONE).");
             handler->SetSentErrorMessage(true);
             return false;
         }
 
-        if (!player->GetPetGUID().IsEmpty())
+        if (player->GetPetGUID())
         {
             handler->PSendSysMessage("You already have a pet");
             handler->SetSentErrorMessage(true);

@@ -55,7 +55,8 @@ enum Spells
     SPELL_DOMINATEMIND           = 14515,
     SPELL_HOLYSMITE              = 9481,
     SPELL_HEAL                   = 12039,
-    SPELL_POWERWORDSHIELD        = 22187
+    SPELL_POWERWORDSHIELD        = 22187,
+    SPELL_DIVINESHIELD           = 41367
 };
 
 class boss_scarlet_commander_mograine : public CreatureScript
@@ -134,18 +135,20 @@ public:
             //On first death, fake death and open door, as well as initiate whitemane if exist
             if (Unit* Whitemane = ObjectAccessor::GetUnit(*me, instance->GetGuidData(DATA_WHITEMANE)))
             {
+                //GameObject* door = ObjectAccessor::GetGameObject(*me, instance->GetGuidData(GO_HIGH_INQUISITORS_DOOR));
+
                 instance->SetBossState(DATA_MOGRAINE_AND_WHITE_EVENT, IN_PROGRESS);
 
                 Whitemane->GetMotionMaster()->MovePoint(1, 1163.113370f, 1398.856812f, 32.527786f);
 
                 me->GetMotionMaster()->MovementExpired();
                 me->GetMotionMaster()->MoveIdle();
-
                 me->SetHealth(0);
 
                 if (me->IsNonMeleeSpellCast(false))
                     me->InterruptNonMeleeSpells(false);
-
+				
+                //me->ClearComboPointHolders();
                 me->RemoveAllAuras();
                 me->ClearAllReactives();
 
@@ -317,7 +320,9 @@ public:
                 if (me->IsNonMeleeSpellCast(false))
                     me->InterruptNonMeleeSpells(false);
 
+
                 DoCastVictim(SPELL_DEEPSLEEP);
+                DoCast(me, SPELL_DIVINESHIELD);
                 _bCanResurrectCheck = true;
                 _bCanResurrect = true;
                 return;
@@ -325,6 +330,8 @@ public:
 
             //while in "resurrect-mode", don't do anything
             if (_bCanResurrect)
+                //Keep's her from dying from dots.
+                me->SetHealth(50);
                 return;
 
             //If we are <75% hp cast healing spells at self or Mograine

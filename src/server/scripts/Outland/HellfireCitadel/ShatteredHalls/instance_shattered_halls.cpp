@@ -24,13 +24,13 @@ SDCategory: Hellfire Citadel, Shattered Halls
 EndScriptData */
 
 #include "ScriptMgr.h"
-#include "InstanceScript.h"
-#include "shattered_halls.h"
-#include "Player.h"
-#include "SpellAuras.h"
-#include "CreatureAI.h"
 #include "ScriptedCreature.h"
 #include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "InstanceScript.h"
+#include "Player.h"
+#include "SpellAuras.h"
+#include "shattered_halls.h"
 
 DoorData const doorData[] =
 {
@@ -302,7 +302,6 @@ class instance_shattered_halls : public InstanceMapScript
             uint32 _team;
         };
 };
-
 
 void AddSC_instance_shattered_halls()
 {

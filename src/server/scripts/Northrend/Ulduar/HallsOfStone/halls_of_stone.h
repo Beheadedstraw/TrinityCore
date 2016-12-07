@@ -23,7 +23,7 @@
 
 uint32 const EncounterCount = 4;
 
-enum HOSDataTypes
+enum DataTypes
 {
     // Encounter States/Boss GUIDs
     DATA_KRYSTALLUS             = 0,
@@ -42,7 +42,7 @@ enum HOSDataTypes
     DATA_GO_SKY_FLOOR           = 11
 };
 
-enum HOSCreatureIds
+enum CreatureIds
 {
     NPC_MAIDEN                  = 27975,
     NPC_KRYSTALLUS              = 27977,
@@ -53,7 +53,7 @@ enum HOSCreatureIds
     NPC_BRANN                   = 28070
 };
 
-enum HOSGameObjectIds
+enum GameObjectIds
 {
     GO_ABEDNEUM                 = 191669,
     GO_MARNAK                   = 191670,
