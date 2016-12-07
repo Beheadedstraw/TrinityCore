@@ -1203,7 +1203,7 @@ class instance_ulduar : public InstanceMapScript
                 }
             }
 
-            void UpdateDoorState(GameObject* door) override
+            void UpdateDoorState(GameObject* door, bool doorOpen=true) override
             {
                 // Leviathan doors are set to DOOR_TYPE_ROOM except the one it uses to enter the room
                 // which has to be set to DOOR_TYPE_PASSAGE
@@ -1213,7 +1213,7 @@ class instance_ulduar : public InstanceMapScript
                     InstanceScript::UpdateDoorState(door);
             }
 
-            void AddDoor(GameObject* door, bool add) override
+            void AddDoor(GameObject* door, bool add, bool doorOpen=true) override
             {
                 // Leviathan doors are South except the one it uses to enter the room
                 // which is North and should not be used for boundary checks in BossAI::CheckBoundary()
@@ -1228,7 +1228,7 @@ class instance_ulduar : public InstanceMapScript
                         UpdateDoorState(door);
                 }
                 else
-                    InstanceScript::AddDoor(door, add);
+                    InstanceScript::AddDoor(door, add, true);
             }
 
         private:

@@ -189,13 +189,13 @@ void InstanceScript::UpdateMinionState(Creature* minion, EncounterState state)
     }
 }
 
-void InstanceScript::UpdateDoorState(GameObject* door)
+void InstanceScript::UpdateDoorState(GameObject* door, bool doorOpen)
 {
     DoorInfoMapBounds range = doors.equal_range(door->GetEntry());
     if (range.first == range.second)
         return;
 
-    bool open = true;
+    bool open = doorOpen;
     for (; range.first != range.second && open; ++range.first)
     {
         DoorInfo const& info = range.first->second;
@@ -250,7 +250,7 @@ void InstanceScript::AddObject(WorldObject* obj, uint32 type, bool add)
     }
 }
 
-void InstanceScript::AddDoor(GameObject* door, bool add)
+void InstanceScript::AddDoor(GameObject* door, bool add, bool doorOpen)
 {
     DoorInfoMapBounds range = doors.equal_range(door->GetEntry());
     if (range.first == range.second)
@@ -269,7 +269,7 @@ void InstanceScript::AddDoor(GameObject* door, bool add)
     }
 
     if (add)
-        UpdateDoorState(door);
+        UpdateDoorState(door, doorOpen);
 }
 
 void InstanceScript::AddMinion(Creature* minion, bool add)

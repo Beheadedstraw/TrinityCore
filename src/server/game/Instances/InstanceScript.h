@@ -259,10 +259,10 @@ class TC_GAME_API InstanceScript : public ZoneScript
         void AddObject(GameObject* obj, bool add);
         void AddObject(WorldObject* obj, uint32 type, bool add);
 
-        virtual void AddDoor(GameObject* door, bool add);
+        virtual void AddDoor(GameObject* door, bool add, bool doorOpen = true);
         void AddMinion(Creature* minion, bool add);
 
-        virtual void UpdateDoorState(GameObject* door);
+        virtual void UpdateDoorState(GameObject* door, bool doorOpen = true);
         void UpdateMinionState(Creature* minion, EncounterState state);
 
         // Exposes private data that should never be modified unless exceptional cases.

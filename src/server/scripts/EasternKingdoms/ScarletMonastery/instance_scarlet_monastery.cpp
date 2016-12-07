@@ -49,7 +49,7 @@ class instance_scarlet_monastery : public InstanceMapScript
                         PumpkinShrineGUID = go->GetGUID();
                         break;
                     case GO_HIGH_INQUISITORS_DOOR:
-                        AddDoor(go, true);
+                        AddDoor(go, true, false);
                         break;
                     default:
                         break;
@@ -61,13 +61,13 @@ class instance_scarlet_monastery : public InstanceMapScript
                 switch (go->GetEntry())
                 {
                     case GO_HIGH_INQUISITORS_DOOR:
-                        AddDoor(go, false);
+                        AddDoor(go, false, false);
+
                         break;
                     default:
                         break;
                 }
             }
-
             void OnCreatureCreate(Creature* creature) override
             {
                 switch (creature->GetEntry())
