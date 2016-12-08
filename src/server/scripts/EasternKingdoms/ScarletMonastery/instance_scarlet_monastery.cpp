@@ -19,6 +19,7 @@
 #include "InstanceScript.h"
 #include "scarlet_monastery.h"
 
+
 DoorData const doorData[] =
 {
     { GO_HIGH_INQUISITORS_DOOR, DATA_MOGRAINE_AND_WHITE_EVENT, DOOR_TYPE_ROOM },

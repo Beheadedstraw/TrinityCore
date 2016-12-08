@@ -103,7 +103,6 @@ public:
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
             me->SetStandState(UNIT_STAND_STATE_STAND);
-
             if (me->IsAlive())
                 instance->SetBossState(DATA_MOGRAINE_AND_WHITE_EVENT, NOT_STARTED);
         }
@@ -135,9 +134,10 @@ public:
             //On first death, fake death and open door, as well as initiate whitemane if exist
             if (Unit* Whitemane = ObjectAccessor::GetUnit(*me, instance->GetGuidData(DATA_WHITEMANE)))
             {
-                //GameObject* door = ObjectAccessor::GetGameObject(*me, instance->GetGuidData(GO_HIGH_INQUISITORS_DOOR));
-                //door->SetGoState(GO_STATE_ACTIVE);
-                instance->SetBossState(DATA_MOGRAINE_AND_WHITE_EVENT, IN_PROGRESS);
+				printf("Opening SM Door");
+				//instance->DoUseDoorOrButton(instance->GetGuidData(GO_HIGH_INQUISITORS_DOOR));
+				instance->SetBossState(DATA_MOGRAINE_AND_WHITE_EVENT, IN_PROGRESS);
+				instance->SetBossState(DATA_MOGRAINE_AND_WHITE_EVENT, SPECIAL);
 
                 Whitemane->GetMotionMaster()->MovePoint(1, 1163.113370f, 1398.856812f, 32.527786f);
 
@@ -159,6 +159,8 @@ public:
                 _bFakeDeath = true;
 
                 damage = 0;
+
+				AggroAllPlayers(Whitemane);
             }
         }
 
@@ -173,6 +175,26 @@ public:
                 instance->SetBossState(DATA_MOGRAINE_AND_WHITE_EVENT, SPECIAL);
             }
         }
+
+		void AggroAllPlayers(Unit* temp)
+		{
+			Map::PlayerList const &PlList = me->GetMap()->GetPlayers();
+			for (Map::PlayerList::const_iterator i = PlList.begin(); i != PlList.end(); ++i)
+			{
+				if (Player* player = i->GetSource())
+				{
+					if (player->IsGameMaster())
+						continue;
+
+					if (player->IsAlive())
+					{
+						temp->SetInCombatWith(player);
+						player->SetInCombatWith(temp);
+						temp->AddThreat(player, 0.0f);
+					}
+				}
+			}
+		}
 
         void UpdateAI(uint32 diff) override
         {
@@ -276,6 +298,8 @@ public:
                 return;
 
             ScriptedAI::AttackStart(who);
+			//AggroAllPlayers(me);
+			
         }
 
         void EnterCombat(Unit* /*who*/) override
@@ -293,6 +317,26 @@ public:
             if (!_bCanResurrectCheck && damage >= me->GetHealth())
                 damage = me->GetHealth() - 1;
         }
+
+		void AggroAllPlayers(Unit* temp)
+		{
+			Map::PlayerList const &PlList = me->GetMap()->GetPlayers();
+			for (Map::PlayerList::const_iterator i = PlList.begin(); i != PlList.end(); ++i)
+			{
+				if (Player* player = i->GetSource())
+				{
+					if (player->IsGameMaster())
+						continue;
+					
+					if (player->IsAlive())
+					{
+						temp->SetInCombatWith(player);
+						player->SetInCombatWith(temp);
+						temp->AddThreat(player, 0.0f);
+					}
+				}
+			}
+		}
 
         void UpdateAI(uint32 diff) override
         {
@@ -330,8 +374,6 @@ public:
 
             //while in "resurrect-mode", don't do anything
             if (_bCanResurrect)
-                //Keep's her from dying from dots.
-                me->SetHealth(50);
                 return;
 
             //If we are <75% hp cast healing spells at self or Mograine
